@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBCVerify, removeSession } from '../../../lib/auth';
  
-export async function GET (req: NextRequest, res: NextResponse) {
+export async function GET (req: NextRequest) {
     try {
         console.log('************************ Uninstalling app ************************');
         const { searchParams } = new URL(req.url);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encodePayload, getBCAuth, setSession } from '../../../lib/auth';
 
-export async function GET (req: NextRequest, res: NextResponse) {
+export async function GET (req: NextRequest) {
     try {
         console.log('************************ Authenticating app on install ************************');
         // Authenticate the app on install

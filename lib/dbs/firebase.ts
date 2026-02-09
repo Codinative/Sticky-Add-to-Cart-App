@@ -62,7 +62,7 @@ export async function getStoreToken(storeHash: string) {
     return storeDoc.data()?.accessToken ?? null;
 }
  
-export async function deleteStore(session: SessionProps) {
+export async function deleteStore(session: SessionProps): Promise<[string, string] | null> {
     const contextString = session?.context || session?.sub || '';
     const storeHash = contextString.split('/')[1] || '';
 

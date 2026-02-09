@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 interface SessionContextValue {
@@ -9,7 +9,7 @@ interface SessionContextValue {
 
 const SessionContext = createContext<SessionContextValue | undefined>(undefined);
 
-const SessionProvider = ({ children }: { children: ReactNode }) => {
+const SessionProviderInner = ({ children }: { children: ReactNode }) => {
   const searchParams = useSearchParams();
   const context = searchParams.get("context") || "";
 
@@ -17,6 +17,14 @@ const SessionProvider = ({ children }: { children: ReactNode }) => {
     <SessionContext.Provider value={{ context }}>
       {children}
     </SessionContext.Provider>
+  );
+};
+
+const SessionProvider = ({ children }: { children: ReactNode }) => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SessionProviderInner>{children}</SessionProviderInner>
+    </Suspense>
   );
 };
 

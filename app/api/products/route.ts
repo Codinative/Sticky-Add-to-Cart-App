@@ -2,7 +2,7 @@ import { bigcommerceClient, getSession } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 
-export async function GET (req: NextRequest, res: NextResponse) {
+export async function GET (req: NextRequest) {
     try {
         // First, retrieve the session by calling:
         const session = await getSession(req);

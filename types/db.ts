@@ -14,7 +14,7 @@ export interface UserData {
  
 export interface Db {
     setUser(session: SessionProps, storeHash: string): Promise<null | undefined>;
-    setStore(session: SessionProps): Promise<null | undefined>;
+    setStore(session: SessionProps): Promise<string | null>;
     getStoreToken(storeHash: string): Promise<any>;
     deleteStore(session: SessionProps): Promise<[string, string] | null | undefined>;
     deleteUser(userId: string, storeHash: string): Promise<null | undefined>;

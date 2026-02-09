@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encodePayload, getBCVerify, setSession } from '../../../lib/auth';
  
-export async function GET (req: NextRequest, res: NextResponse) {
+export async function GET (req: NextRequest) {
     try {
         console.log('************************ Verifying app on load ************************');
         // Verify when app loaded (launch)
