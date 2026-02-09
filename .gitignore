@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+
+# Next.js build output
+.next/
+out/
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+turbo.log
+
+# Editor & system files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Firebase local/emulator data
+.firebase/
+firestore-debug.log
+storage-debug.log
+
+# Coverage reports
+coverage/
+
+# OS specific
+Thumbs.db
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Misc cache
+.cache/
