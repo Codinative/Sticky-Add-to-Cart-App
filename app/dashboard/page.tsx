@@ -285,6 +285,19 @@ export default function StickyBarDashboard() {
       }
 
       setSavedConfig(config);
+
+      // Install/update the storefront script on the merchant's store
+      try {
+        const scriptResponse = await fetch(`/api/bc-scripts?context=${encodeURIComponent(encodedContext)}`, {
+          method: 'POST',
+        });
+        if (!scriptResponse.ok) {
+          console.warn('Script installation warning:', await scriptResponse.text());
+        }
+      } catch (scriptError: any) {
+        console.warn('Script installation warning:', scriptError.message);
+      }
+
       showToast('Settings saved successfully', 'success');
     } catch (error: any) {
       console.error('Error saving config:', error.message);

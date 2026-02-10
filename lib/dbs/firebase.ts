@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { randomUUID } from 'crypto';
 import { SessionProps } from '../../types';
 import { StickyBarConfig } from '@/types/config';
 
@@ -110,6 +111,55 @@ export async function deleteUser(userId: string, storeHash: string) {
     await userRef.delete();
   }
 }
+
+// ─── Unique Store ID ───────────────────────────────────────────
+
+export async function getOrCreateStoreUniqueId(storeHash: string): Promise<string | null> {
+  if (!storeHash) return null;
+
+  try {
+    const ref = db.collection('stores').doc(storeHash);
+    const doc = await ref.get();
+
+    if (!doc.exists) return null;
+
+    const existing = doc.data()?.uniqueStoreId;
+    if (existing) return existing;
+
+    const uniqueStoreId = randomUUID();
+    await ref.update({ uniqueStoreId });
+    return uniqueStoreId;
+  } catch (error) {
+    console.error('Error in getOrCreateStoreUniqueId:', error);
+    return null;
+  }
+}
+
+export async function getStoreByUniqueId(uniqueStoreId: string): Promise<{ storeHash: string; accessToken: string } | null> {
+  if (!uniqueStoreId) return null;
+
+  try {
+    const snapshot = await db.collection('stores')
+      .where('uniqueStoreId', '==', uniqueStoreId)
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) return null;
+
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+
+    return {
+      storeHash: doc.id,
+      accessToken: data?.accessToken || '',
+    };
+  } catch (error) {
+    console.error('Error in getStoreByUniqueId:', error);
+    return null;
+  }
+}
+
+// ─── Sticky Bar Config ─────────────────────────────────────────
 
 export async function setStickyBarConfig(storeHash: string, config: StickyBarConfig) {
   if (!storeHash || !config) return null;
