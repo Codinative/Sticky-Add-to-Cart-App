@@ -1,5 +1,6 @@
 import * as admin from 'firebase-admin';
 import { SessionProps } from '../../types';
+import { StickyBarConfig } from '@/types/config';
 
 // Firebase Admin SDK initialization for server-side operations
 const { 
@@ -107,5 +108,41 @@ export async function deleteUser(userId: string, storeHash: string) {
 
   if (!dataAfter?.stores?.length) {
     await userRef.delete();
+  }
+}
+
+export async function setStickyBarConfig(storeHash: string, config: StickyBarConfig) {
+  if (!storeHash || !config) return null;
+
+  try {
+    const ref = db.collection('stores').doc(storeHash).collection('stickyBar').doc('config');
+    await ref.set(config);
+    return ref.id;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function getStickyBarConfig(storeHash: string): Promise<StickyBarConfig | null> {
+  if (!storeHash) return null;
+
+  try {
+    const ref = db.collection('stores').doc(storeHash).collection('stickyBar').doc('config');
+    const doc = await ref.get();
+    return doc.data() as StickyBarConfig;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function deleteStickyBarConfig(storeHash: string) {
+  if (!storeHash) return null;
+
+  try {
+    const ref = db.collection('stores').doc(storeHash).collection('stickyBar').doc('config');
+    await ref.delete();
+    return;
+  } catch (error) {
+    return null;
   }
 }
