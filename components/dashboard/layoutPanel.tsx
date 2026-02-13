@@ -59,41 +59,41 @@ export function LayoutPanel({ config, updateConfig }: { config: any, updateConfi
             
             {config.barWidthMode === "contained" && (
               <RangeSlider 
-                label="Max Width" 
+                label="Bar Max Width" 
                 value={config.barMaxWidth} 
                 onChange={(v) => updateConfig("barMaxWidth", v)} 
                 min={600} 
-                max={1400} 
+                max={1800} 
               />
             )}
 
+            <RangeSlider
+              label="Content Max Width"
+              value={config.contentMaxWidth ?? 0}
+              onChange={(v) => updateConfig("contentMaxWidth", v)}
+              min={0}
+              max={1800}
+            />
+            <p className="text-xs text-gray-400 -mt-3">
+              Constrains the inner content width within the bar. Set to 0 for no limit (content stretches to fill the bar).
+            </p>
+
             <div className="border-t border-gray-100 pt-4" />
 
-            {/* Content Alignment */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Content Alignment</label>
-              <div className="grid grid-cols-4 gap-1.5">
-                {[
-                  { value: "left", icon: <Icons.AlignLeft size={16} />, label: "Left" },
-                  { value: "center", icon: <Icons.AlignCenter size={16} />, label: "Center" },
-                  { value: "right", icon: <Icons.AlignRight size={16} />, label: "Right" },
-                  { value: "spaceBetween", icon: <Icons.AlignJustify size={16} />, label: "Spread" },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => updateConfig("contentAlignment", option.value)}
-                    className={`flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-lg border transition-all ${
-                      config.contentAlignment === option.value
-                        ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                        : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                    }`}
-                  >
-                    {option.icon}
-                    <span className="text-[10px] font-medium">{option.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Justify Content */}
+            <SelectField
+              label="Justify Content"
+              value={config.contentAlignment}
+              onChange={(v) => updateConfig("contentAlignment", v)}
+              options={[
+                { value: "left", label: "Start (flex-start)" },
+                { value: "center", label: "Center" },
+                { value: "right", label: "End (flex-end)" },
+                { value: "spaceBetween", label: "Space Between" },
+                { value: "spaceAround", label: "Space Around" },
+                { value: "spaceEvenly", label: "Space Evenly" },
+              ]}
+            />
 
             {/* Vertical Alignment */}
             <SelectField
@@ -116,8 +116,15 @@ export function LayoutPanel({ config, updateConfig }: { config: any, updateConfi
               <NumberInput label="Element Gap" value={config.elementGap} onChange={(v) => updateConfig("elementGap", v)} max={40} />
               <NumberInput label="Bar Offset" value={config.barOffset} onChange={(v) => updateConfig("barOffset", v)} max={50} />
             </div>
+            <RangeSlider 
+              label="Group Gap" 
+              value={config.groupGap ?? 32} 
+              onChange={(v) => updateConfig("groupGap", v)} 
+              min={0} 
+              max={400} 
+            />
             <p className="text-xs text-gray-400">
-              Element Gap controls the space between items inside the bar. Bar Offset adjusts the distance from the edge of the viewport.
+              Element Gap controls the space between items within each group. Group Gap controls the space between the left group (image, title, price) and the right group (variants, quantity, button). Bar Offset adjusts the distance from the viewport edge.
             </p>
           </div>
         </SectionCard>

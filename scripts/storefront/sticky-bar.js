@@ -6,10 +6,22 @@
 (function () {
   "use strict";
 
-  // ─── Script Tag Attributes ─────────────────────────────────────
+  // ─── Script URL Parameters ────────────────────────────────────
   var SCRIPT_TAG = document.currentScript;
-  var STORE_ID = SCRIPT_TAG ? SCRIPT_TAG.getAttribute("data-store-id") : null;
-  var APP_URL = SCRIPT_TAG ? SCRIPT_TAG.getAttribute("data-app-url") : null;
+  var STORE_ID = null;
+  var APP_URL = null;
+
+  if (SCRIPT_TAG && SCRIPT_TAG.src) {
+    try {
+      var scriptUrl = new URL(SCRIPT_TAG.src);
+      STORE_ID = scriptUrl.searchParams.get("sid");
+      APP_URL = scriptUrl.searchParams.get("app");
+    } catch (e) {
+      // fallback: try data attributes
+      STORE_ID = SCRIPT_TAG.getAttribute("data-store-id");
+      APP_URL = SCRIPT_TAG.getAttribute("data-app-url");
+    }
+  }
 
   if (!STORE_ID || !APP_URL) return;
 
@@ -41,20 +53,6 @@
   var quantity = 1;
   var barVisible = false;
   var barDismissed = false;
-
-  // ─── Product Page Detection ────────────────────────────────────
-
-  function getProductId() {
-    // 1. BigCommerce's standard BCData
-    if (window.BCData && window.BCData.product_id) return window.BCData.product_id;
-    // 2. Add-to-cart form hidden input
-    var input = document.querySelector('input[name="product_id"]');
-    if (input && input.value) return input.value;
-    // 3. Data attribute
-    var el = document.querySelector("[data-product-id]");
-    if (el) return el.getAttribute("data-product-id");
-    return null;
-  }
 
   // ─── Config Flattening (nested API format → flat format) ───────
   // Mirrors the dashboard's nestedToFlattenConfig function
@@ -119,7 +117,11 @@
       imageBorderRadius: is.borderRadius !== undefined ? is.borderRadius : 8,
       imageBorderColor: is.borderColor || "#E5E7EB",
       imageBorderWidth: is.borderWidth || 0,
-      variantDisplayStyle: vs.displayStyle || "buttons",
+      variantOptions: vs.options || [
+        { name: "Size", displayType: "rectangleList" },
+        { name: "Color", displayType: "swatch" },
+      ],
+      variantShowLabels: vs.showLabels !== undefined ? vs.showLabels : true,
       variantActiveColor: vs.activeColor || "#2563EB",
       variantBorderColor: vs.borderColor || "#E5E7EB",
       variantTextColor: vs.textColor || "#6B7280",
@@ -127,6 +129,9 @@
       quantityStyle: qs.style || "plusMinus",
       quantityBorderColor: qs.borderColor || "#E5E7EB",
       quantityBorderRadius: qs.borderRadius !== undefined ? qs.borderRadius : 8,
+      quantityTextColor: qs.textColor || "#374151",
+      quantityBgColor: qs.bgColor || "#FFFFFF",
+      quantityButtonColor: qs.buttonColor || "#9CA3AF",
       position: po.position || "bottom",
       elements: ea.elements || [
         { id: "image", label: "Product Image", visible: true },
@@ -137,10 +142,12 @@
         { id: "button", label: "Add to Cart Button", visible: true },
       ],
       elementGap: sp.elementGap !== undefined ? sp.elementGap : 12,
+      groupGap: sp.groupGap !== undefined ? sp.groupGap : 32,
       barOffset: sp.barOffset || 0,
       barWidthMode: bw.mode || "full",
       barMaxWidth: bw.maxWidth || 1200,
-      contentAlignment: bw.contentAlignment || "center",
+      contentMaxWidth: bw.contentMaxWidth !== undefined ? bw.contentMaxWidth : 0,
+      contentAlignment: bw.contentAlignment || "spaceBetween",
       verticalAlignment: bw.verticalAlignment || "center",
       triggerMode: di.triggerMode || "scroll",
       triggerDelay: di.triggerDelay !== undefined ? di.triggerDelay : 3,
@@ -165,27 +172,69 @@
 
   // ─── API Calls ─────────────────────────────────────────────────
 
+  // Shared headers for all API requests (includes ngrok bypass for dev)
+  var API_HEADERS = { "ngrok-skip-browser-warning": "1" };
+
+  // ─── Config Caching ───────────────────────────────────────────
+  var CONFIG_CACHE_KEY = "satc-config-" + STORE_ID;
+  var CONFIG_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  function getCachedConfig() {
+    try {
+      var raw = sessionStorage.getItem(CONFIG_CACHE_KEY);
+      if (!raw) return null;
+      var cached = JSON.parse(raw);
+      if (Date.now() - cached.ts > CONFIG_CACHE_TTL) {
+        sessionStorage.removeItem(CONFIG_CACHE_KEY);
+        return null;
+      }
+      return cached.data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setCachedConfig(data) {
+    try {
+      sessionStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data }));
+    } catch (e) {}
+  }
+
   function fetchConfig() {
-    return fetch(APP_URL + "/api/storefront/config?sid=" + encodeURIComponent(STORE_ID))
+    // Return cached config immediately if available
+    var cached = getCachedConfig();
+    if (cached) {
+      return Promise.resolve(cached);
+    }
+
+    return fetch(APP_URL + "/api/storefront/config?sid=" + encodeURIComponent(STORE_ID), {
+      headers: API_HEADERS,
+    })
       .then(function (res) {
         if (!res.ok) throw new Error("Config fetch failed");
         return res.json();
       })
       .then(function (data) {
-        return data.config || null;
+        var cfg = data.config || null;
+        if (cfg) setCachedConfig(cfg);
+        return cfg;
       });
   }
 
-  function fetchProductData(productId) {
+  /**
+   * Fetch product data via our GraphQL proxy API.
+   * Sends the current page path — the server determines if this is a product
+   * page and returns the product data using BigCommerce's GraphQL route(path:) query.
+   * Returns { isProductPage: boolean, product: object|null }
+   */
+  function fetchProductByPath(pagePath) {
     return fetch(
-      APP_URL + "/api/storefront/product?sid=" + encodeURIComponent(STORE_ID) + "&productId=" + encodeURIComponent(productId)
+      APP_URL + "/api/storefront/product?sid=" + encodeURIComponent(STORE_ID) + "&path=" + encodeURIComponent(pagePath),
+      { headers: API_HEADERS }
     )
       .then(function (res) {
         if (!res.ok) throw new Error("Product fetch failed");
         return res.json();
-      })
-      .then(function (data) {
-        return data.product || null;
       });
   }
 
@@ -305,8 +354,8 @@
   }
 
   function getAlignmentValue(alignment) {
-    var map = { left: "flex-start", center: "center", right: "flex-end", spaceBetween: "space-between" };
-    return map[alignment] || "center";
+    var map = { left: "flex-start", center: "center", right: "flex-end", spaceBetween: "space-between", spaceAround: "space-around", spaceEvenly: "space-evenly" };
+    return map[alignment] || "space-between";
   }
 
   function getVerticalAlignValue(alignment) {
@@ -473,8 +522,188 @@
     return container;
   }
 
+  // ─── Variant Display Type Lookup ────────────────────────────────
+
+  function getVariantDisplayType(optionName) {
+    var options = config.variantOptions || [];
+    for (var i = 0; i < options.length; i++) {
+      if (options[i].name && options[i].name.toLowerCase() === optionName.toLowerCase()) {
+        return options[i].displayType;
+      }
+    }
+    return "dropdown"; // fallback
+  }
+
+  // ─── Variant Sub-Renderers ────────────────────────────────────
+
+  function renderVariantDropdown(optionName, values) {
+    var wrapper = el("div", { style: { position: "relative", display: "inline-block" } });
+    var select = el("select", {
+      "data-variant-name": optionName,
+      style: {
+        padding: "4px 24px 4px 8px",
+        fontSize: Math.max((config.fontSize || 14) - 2, 11) + "px",
+        border: "1px solid " + config.variantBorderColor,
+        borderRadius: config.variantBorderRadius + "px",
+        color: config.variantTextColor,
+        backgroundColor: "#fff",
+        appearance: "none",
+        WebkitAppearance: "none",
+        cursor: "pointer",
+        minWidth: "70px",
+      },
+      onChange: function (e) {
+        handleVariantChange(e.target.getAttribute("data-variant-name"), e.target.value);
+      },
+    });
+    var defaultOpt = el("option", { value: "" }, optionName);
+    select.appendChild(defaultOpt);
+    values.forEach(function (val) {
+      var opt = el("option", { value: val }, val);
+      if (selectedVariants[optionName] === val) opt.selected = true;
+      select.appendChild(opt);
+    });
+    wrapper.appendChild(select);
+    return wrapper;
+  }
+
+  var COLOR_MAP = {
+    red: "#EF4444", blue: "#3B82F6", green: "#22C55E", yellow: "#EAB308",
+    orange: "#F97316", purple: "#A855F7", pink: "#EC4899", black: "#1F2937",
+    white: "#FFFFFF", gray: "#6B7280", grey: "#6B7280", brown: "#92400E",
+    navy: "#1E3A5F", teal: "#14B8A6", coral: "#F87171", beige: "#D4C5A9",
+    maroon: "#7F1D1D", olive: "#6B7212", cyan: "#06B6D4", magenta: "#D946EF",
+    gold: "#CA8A04", silver: "#9CA3AF", tan: "#D2B48C", ivory: "#FFFFF0",
+    lavender: "#C4B5FD", indigo: "#6366F1", violet: "#8B5CF6", charcoal: "#374151",
+    burgundy: "#800020", khaki: "#BDB76B", cream: "#FFFDD0", mint: "#A7F3D0",
+    peach: "#FDBA74", turquoise: "#2DD4BF", salmon: "#FA8072", plum: "#9333EA",
+    lime: "#84CC16", aqua: "#22D3EE", rose: "#FB7185", sky: "#38BDF8",
+    slate: "#64748B", stone: "#78716C", zinc: "#71717A", amber: "#F59E0B",
+    emerald: "#10B981", fuchsia: "#D946EF", natural: "#E7DDD2",
+  };
+
+  function renderVariantSwatch(optionName, values) {
+    var group = el("div", { style: { display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" } });
+    values.forEach(function (val) {
+      var isActive = selectedVariants[optionName] === val;
+      var hexColor = COLOR_MAP[val.toLowerCase()] || null;
+      var swatch = el("div", {
+        "data-variant-name": optionName,
+        "data-variant-value": val,
+        title: val,
+        style: {
+          width: isMobile() ? "24px" : "28px",
+          height: isMobile() ? "24px" : "28px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "2px solid " + (isActive ? config.variantActiveColor : (hexColor ? hexColor + "40" : config.variantBorderColor)),
+          borderRadius: config.variantBorderRadius + "px",
+          backgroundColor: hexColor || (isActive ? config.variantActiveColor + "18" : "#fff"),
+          fontSize: hexColor ? "0" : (Math.max((config.fontSize || 14) - 4, 9) + "px"),
+          fontWeight: "600",
+          color: isActive ? config.variantActiveColor : config.variantTextColor,
+          cursor: "pointer",
+          transition: "all 0.15s",
+          boxShadow: isActive ? "0 0 0 2px " + config.variantActiveColor : "none",
+        },
+        onClick: function (e) {
+          var t = e.currentTarget;
+          handleVariantChange(t.getAttribute("data-variant-name"), t.getAttribute("data-variant-value"));
+        },
+      }, hexColor ? "" : val.substring(0, 2));
+      group.appendChild(swatch);
+    });
+    return group;
+  }
+
+  function renderVariantRadio(optionName, values) {
+    var group = el("div", { style: { display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" } });
+    values.forEach(function (val) {
+      var isActive = selectedVariants[optionName] === val;
+
+      var radioOuter = el("div", {
+        style: {
+          width: "14px",
+          height: "14px",
+          borderRadius: "50%",
+          border: "2px solid " + (isActive ? config.variantActiveColor : config.variantBorderColor),
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: "0",
+        },
+      });
+      if (isActive) {
+        var radioInner = el("div", {
+          style: {
+            width: "7px",
+            height: "7px",
+            borderRadius: "50%",
+            backgroundColor: config.variantActiveColor,
+          },
+        });
+        radioOuter.appendChild(radioInner);
+      }
+
+      var label = el("span", {
+        style: {
+          fontSize: Math.max((config.fontSize || 14) - 2, 11) + "px",
+          color: isActive ? config.variantActiveColor : config.variantTextColor,
+        },
+      }, val);
+
+      var row = el("div", {
+        "data-variant-name": optionName,
+        "data-variant-value": val,
+        style: { display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" },
+        onClick: function (e) {
+          var t = e.currentTarget;
+          handleVariantChange(t.getAttribute("data-variant-name"), t.getAttribute("data-variant-value"));
+        },
+      }, [radioOuter, label]);
+
+      group.appendChild(row);
+    });
+    return group;
+  }
+
+  function renderVariantRectList(optionName, values) {
+    var group = el("div", { style: { display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" } });
+    values.forEach(function (val) {
+      var isActive = selectedVariants[optionName] === val;
+      var btn = el("button", {
+        "data-variant-name": optionName,
+        "data-variant-value": val,
+        style: {
+          padding: isMobile() ? "2px 8px" : "4px 12px",
+          fontSize: Math.max((config.fontSize || 14) - 2, 11) + "px",
+          fontWeight: "500",
+          border: "1px solid " + (isActive ? config.variantActiveColor : config.variantBorderColor),
+          borderRadius: config.variantBorderRadius + "px",
+          backgroundColor: isActive ? config.variantActiveColor + "18" : "#fff",
+          color: isActive ? config.variantActiveColor : config.variantTextColor,
+          cursor: "pointer",
+          transition: "all 0.15s",
+          lineHeight: "1.4",
+        },
+        onClick: function (e) {
+          var t = e.currentTarget;
+          handleVariantChange(t.getAttribute("data-variant-name"), t.getAttribute("data-variant-value"));
+        },
+      }, val);
+      group.appendChild(btn);
+    });
+    return group;
+  }
+
+  // ─── Main Variant Renderer ────────────────────────────────────
+
   function renderVariants() {
-    var container = el("div", { id: BAR_ID + "-variants", style: { flexShrink: "0" } });
+    var container = el("div", {
+      id: BAR_ID + "-variants",
+      style: { flexShrink: "0", display: "flex", flexDirection: "column", gap: "6px" },
+    });
 
     if (!product.variantLabels || Object.keys(product.variantLabels).length === 0) {
       return container;
@@ -483,67 +712,47 @@
     for (var optionName in product.variantLabels) {
       if (!product.variantLabels.hasOwnProperty(optionName)) continue;
       var values = product.variantLabels[optionName];
+      var displayType = getVariantDisplayType(optionName);
 
-      if (config.variantDisplayStyle === "dropdown") {
-        var wrapper = el("div", { style: { position: "relative", display: "inline-block", marginRight: "8px" } });
-        var select = el("select", {
-          "data-variant-name": optionName,
+      // Row: [label] [control]
+      var row = el("div", {
+        style: { display: "flex", alignItems: "center", gap: "8px" },
+      });
+
+      // Label
+      if (config.variantShowLabels) {
+        var labelEl = el("span", {
           style: {
-            padding: "4px 24px 4px 8px",
-            fontSize: (config.fontSize - 2) + "px",
-            border: "1px solid " + config.variantBorderColor,
-            borderRadius: config.variantBorderRadius + "px",
+            fontSize: Math.max((config.fontSize || 14) - 2, 11) + "px",
             color: config.variantTextColor,
-            backgroundColor: "#fff",
-            appearance: "none",
-            WebkitAppearance: "none",
-            cursor: "pointer",
-            minWidth: "70px",
+            fontWeight: "500",
+            whiteSpace: "nowrap",
           },
-          onChange: function (e) {
-            handleVariantChange(e.target.getAttribute("data-variant-name"), e.target.value);
-          },
-        });
-        var defaultOpt = el("option", { value: "" }, optionName);
-        select.appendChild(defaultOpt);
-        values.forEach(function (val) {
-          var opt = el("option", { value: val }, val);
-          if (selectedVariants[optionName] === val) opt.selected = true;
-          select.appendChild(opt);
-        });
-        wrapper.appendChild(select);
-        container.appendChild(wrapper);
-      } else {
-        // Button style
-        var btnGroup = el("div", {
-          style: { display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" },
-        });
-        values.forEach(function (val) {
-          var isActive = selectedVariants[optionName] === val;
-          var btn = el("button", {
-            "data-variant-name": optionName,
-            "data-variant-value": val,
-            style: {
-              padding: isMobile() ? "2px 8px" : "4px 12px",
-              fontSize: Math.max((config.fontSize || 14) - 2, 11) + "px",
-              fontWeight: "500",
-              border: "1px solid " + (isActive ? config.variantActiveColor : config.variantBorderColor),
-              borderRadius: config.variantBorderRadius + "px",
-              backgroundColor: isActive ? config.variantActiveColor + "18" : "#fff",
-              color: isActive ? config.variantActiveColor : config.variantTextColor,
-              cursor: "pointer",
-              transition: "all 0.15s",
-              lineHeight: "1.4",
-            },
-            onClick: function (e) {
-              var t = e.currentTarget;
-              handleVariantChange(t.getAttribute("data-variant-name"), t.getAttribute("data-variant-value"));
-            },
-          }, val);
-          btnGroup.appendChild(btn);
-        });
-        container.appendChild(btnGroup);
+        }, optionName + ":");
+        row.appendChild(labelEl);
       }
+
+      // Control
+      var control = null;
+      switch (displayType) {
+        case "dropdown":
+          control = renderVariantDropdown(optionName, values);
+          break;
+        case "swatch":
+          control = renderVariantSwatch(optionName, values);
+          break;
+        case "radioButtons":
+          control = renderVariantRadio(optionName, values);
+          break;
+        case "rectangleList":
+          control = renderVariantRectList(optionName, values);
+          break;
+        default:
+          control = renderVariantDropdown(optionName, values);
+      }
+      if (control) row.appendChild(control);
+
+      container.appendChild(row);
     }
 
     return container;
@@ -552,6 +761,10 @@
   function renderQuantity() {
     var container = el("div", { id: BAR_ID + "-quantity", style: { flexShrink: "0" } });
 
+    var qtyTextColor = config.quantityTextColor || "#374151";
+    var qtyBgColor = config.quantityBgColor || "#FFFFFF";
+    var qtyBtnColor = config.quantityButtonColor || "#9CA3AF";
+
     if (config.quantityStyle === "dropdown") {
       var select = el("select", {
         style: {
@@ -559,7 +772,8 @@
           fontSize: "12px",
           border: "1px solid " + config.quantityBorderColor,
           borderRadius: config.quantityBorderRadius + "px",
-          backgroundColor: "#fff",
+          backgroundColor: qtyBgColor,
+          color: qtyTextColor,
           appearance: "none",
           WebkitAppearance: "none",
           cursor: "pointer",
@@ -588,6 +802,8 @@
           fontWeight: "500",
           border: "1px solid " + config.quantityBorderColor,
           borderRadius: config.quantityBorderRadius + "px",
+          backgroundColor: qtyBgColor,
+          color: qtyTextColor,
         },
         onChange: function (e) {
           var v = parseInt(e.target.value, 10);
@@ -604,13 +820,14 @@
           border: "1px solid " + config.quantityBorderColor,
           borderRadius: config.quantityBorderRadius + "px",
           overflow: "hidden",
+          backgroundColor: qtyBgColor,
         },
       });
       var minusBtn = el("button", {
         style: {
           padding: "4px 8px",
           fontSize: "12px",
-          color: "#9CA3AF",
+          color: qtyBtnColor,
           background: "none",
           border: "none",
           cursor: "pointer",
@@ -629,7 +846,7 @@
           padding: "4px 12px",
           fontSize: "12px",
           fontWeight: "500",
-          color: "#374151",
+          color: qtyTextColor,
           borderLeft: "1px solid " + config.quantityBorderColor,
           borderRight: "1px solid " + config.quantityBorderColor,
           lineHeight: "1",
@@ -639,7 +856,7 @@
         style: {
           padding: "4px 8px",
           fontSize: "12px",
-          color: "#9CA3AF",
+          color: qtyBtnColor,
           background: "none",
           border: "none",
           cursor: "pointer",
@@ -745,28 +962,102 @@
     // Build visible elements
     var visibleElements = (config.elements || []).filter(function (e) { return e.visible; });
 
-    var elementNodes = [];
-    visibleElements.forEach(function (elem) {
-      var node = null;
-      switch (elem.id) {
-        case "image": node = renderImage(); break;
-        case "title": node = renderTitle(); break;
-        case "price": node = renderPrice(); break;
-        case "variants": node = renderVariants(); break;
-        case "quantity": node = renderQuantity(); break;
-        case "button": node = renderButton(); break;
-      }
-      if (node) elementNodes.push(node);
-    });
+    var LEFT_IDS = { image: true, title: true, price: true };
 
-    // Inner content container
+    function renderElementNode(elem) {
+      switch (elem.id) {
+        case "image": return renderImage();
+        case "title": return renderTitle();
+        case "price": return renderPrice();
+        case "variants": return renderVariants();
+        case "quantity": return renderQuantity();
+        case "button": return renderButton();
+        default: return null;
+      }
+    }
+
+    // Determine inner content children
+    var innerChildren;
+    var innerGap;
+
+    if (isHoriz) {
+      var leftNodes = [];
+      var rightNodes = [];
+      visibleElements.forEach(function (elem) {
+        var node = renderElementNode(elem);
+        if (!node) return;
+        if (LEFT_IDS[elem.id]) {
+          leftNodes.push(node);
+        } else {
+          rightNodes.push(node);
+        }
+      });
+
+      if (leftNodes.length > 0 && rightNodes.length > 0) {
+        // Two groups with groupGap between them
+        // Scale gap responsively based on viewport width
+        var baseGroupGap = config.groupGap !== undefined ? config.groupGap : 32;
+        var vw = window.innerWidth || document.documentElement.clientWidth || 768;
+        var responsiveGap = baseGroupGap;
+        if (vw < 1200) {
+          // Scale proportionally: full gap at 1200px+, linearly down to 25% at 480px
+          var scale = Math.max(0.25, (vw - 480) / (1200 - 480));
+          responsiveGap = Math.round(baseGroupGap * scale);
+        }
+
+        var leftGroup = el("div", {
+          style: {
+            display: "flex",
+            alignItems: "center",
+            gap: (config.elementGap || 12) + "px",
+            minWidth: "0",
+          },
+        }, leftNodes);
+
+        var rightGroup = el("div", {
+          style: {
+            display: "flex",
+            alignItems: "center",
+            gap: (config.elementGap || 12) + "px",
+            flexShrink: "0",
+          },
+        }, rightNodes);
+
+        innerChildren = [leftGroup, rightGroup];
+        innerGap = responsiveGap + "px";
+      } else {
+        // Only one group present, render flat
+        innerChildren = leftNodes.concat(rightNodes);
+        innerGap = (config.elementGap || 12) + "px";
+      }
+    } else {
+      // Vertical layout: render flat
+      innerChildren = [];
+      visibleElements.forEach(function (elem) {
+        var node = renderElementNode(elem);
+        if (node) innerChildren.push(node);
+      });
+      innerGap = (config.elementGap || 12) + "px";
+    }
+
+    // Content container (flex layout with configurable width and justify-content)
+    var contentWrapStyle = {
+      display: "flex",
+      flexDirection: isHoriz ? "row" : "column",
+      alignItems: isHoriz ? getVerticalAlignValue(config.verticalAlignment) : "center",
+      justifyContent: isHoriz ? getAlignmentValue(config.contentAlignment) : undefined,
+      gap: innerGap,
+    };
+    if (config.contentMaxWidth > 0) {
+      contentWrapStyle.maxWidth = config.contentMaxWidth + "px";
+      contentWrapStyle.margin = "0 auto";
+    }
+
+    var contentWrap = el("div", { style: contentWrapStyle }, innerChildren);
+
+    // Bar background shell (visual styling: bg, border, shadow, padding)
     var inner = el("div", {
       style: {
-        display: "flex",
-        flexDirection: isHoriz ? "row" : "column",
-        alignItems: isHoriz ? getVerticalAlignValue(config.verticalAlignment) : "center",
-        justifyContent: isHoriz ? getAlignmentValue(config.contentAlignment) : undefined,
-        gap: (config.elementGap || 12) + "px",
         background: getBarBackground(),
         borderRadius: config.barBorderRadius + "px",
         padding: config.barPadding + "px",
@@ -777,7 +1068,7 @@
         borderStyle: config.barBorderWidth > 0 ? "solid" : "none",
         position: "relative",
       },
-    }, elementNodes);
+    }, [contentWrap]);
 
     // Close button
     if (config.showCloseButton) {
@@ -803,7 +1094,7 @@
       inner.appendChild(closeBtn);
     }
 
-    // Width container
+    // Width container (bar-level max width)
     var widthWrap = el("div", {
       style: config.barWidthMode === "contained" ? {
         maxWidth: config.barMaxWidth + "px",
@@ -899,6 +1190,7 @@
     if (!url) {
       // Not all options selected
       highlightMissingVariants();
+      showNotification("Please select all options before adding to cart", "error");
       return;
     }
 
@@ -910,42 +1202,73 @@
       if (originalText) originalText.textContent = "Adding...";
     }
 
+    function restoreButton() {
+      if (btn) {
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+        var span = btn.querySelector("span");
+        if (span) span.textContent = config.buttonCustomText || "Add to Cart";
+      }
+    }
+
     fetch(url, { method: "GET", credentials: "include" })
       .then(function (res) {
-        if (!res.ok) throw new Error("Add to cart failed");
+        return res.text().then(function (html) {
+          return { ok: res.ok, status: res.status, html: html };
+        });
+      })
+      .then(function (result) {
+        restoreButton();
 
-        // Restore button
-        if (btn) {
-          btn.style.opacity = "1";
-          btn.style.pointerEvents = "auto";
-          var span = btn.querySelector("span");
-          if (span) span.textContent = config.buttonCustomText || "Add to Cart";
+        // Try to extract error message from the response HTML
+        var errorMsg = extractErrorFromHtml(result.html);
+
+        if (!result.ok || errorMsg) {
+          showNotification(errorMsg || "Failed to add item to cart. Please try again.", "error");
+          return;
         }
 
         // Success notification
         if (config.showSuccessNotification) {
-          showNotification(config.successMessage || "Added to cart successfully!");
+          showNotification(config.successMessage || "Added to cart successfully!", "success");
         }
 
-        // Cart action
-        if (config.cartAction === "redirect") {
-          window.location.href = "/cart.php";
-        }
-
-        // Auto-hide
-        if (config.autoHideAfterATC) {
-          setTimeout(function () { hideBar(); }, (config.autoHideDelay || 3) * 1000);
-        }
+        // Always redirect to cart page after successful add to cart
+        window.location.href = "/cart.php";
       })
       .catch(function (err) {
         console.error("Sticky ATC error:", err);
-        if (btn) {
-          btn.style.opacity = "1";
-          btn.style.pointerEvents = "auto";
-          var span = btn.querySelector("span");
-          if (span) span.textContent = config.buttonCustomText || "Add to Cart";
-        }
+        restoreButton();
+        showNotification("Something went wrong. Please try again.", "error");
       });
+  }
+
+  function extractErrorFromHtml(html) {
+    if (!html) return null;
+    try {
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(html, "text/html");
+
+      // BigCommerce typically puts errors in an alertBox-message or similar container
+      var selectors = [
+        ".alertBox-message",
+        ".alertBox--error .alertBox-message",
+        ".alertBox--error",
+        "[data-alert-message]",
+        ".productView-info--error",
+      ];
+
+      for (var i = 0; i < selectors.length; i++) {
+        var el = doc.querySelector(selectors[i]);
+        if (el) {
+          var text = (el.textContent || "").trim();
+          if (text) return text;
+        }
+      }
+    } catch (e) {
+      // DOMParser not available or parsing failed — ignore
+    }
+    return null;
   }
 
   function highlightMissingVariants() {
@@ -960,36 +1283,65 @@
     }, 1500);
   }
 
-  function showNotification(message) {
+  function showNotification(message, type) {
+    type = type || "success";
     var existing = document.getElementById(NOTIFICATION_ID);
     if (existing) existing.remove();
 
-    var notif = el("div", {
-      id: NOTIFICATION_ID,
-      style: {
-        position: "fixed",
-        top: "20px",
-        right: "20px",
-        backgroundColor: "#10B981",
-        color: "#fff",
-        padding: "12px 20px",
-        borderRadius: "8px",
-        fontSize: "14px",
-        fontWeight: "500",
-        zIndex: String((config.zIndex || 9999) + 1),
-        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-        transition: "opacity 0.3s, transform 0.3s",
-        transform: "translateX(0)",
-      },
-    }, message);
+    var bgColor = type === "error" ? "#EF4444" : "#10B981";
+    var icon = type === "error"
+      ? '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.5v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg>'
+      : '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M3.5 8.5L6.5 11.5L12.5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    var closeIcon = '<svg width="8" height="8" viewBox="0 0 8 8" fill="none" style="flex-shrink:0;cursor:pointer;opacity:0.8" class="notif-close-btn"><line x1="1" y1="1" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="1" x2="1" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+
+    var notif = document.createElement("div");
+    notif.id = NOTIFICATION_ID;
+    Object.assign(notif.style, {
+      position: "fixed",
+      top: "20px",
+      right: "20px",
+      backgroundColor: bgColor,
+      color: "#fff",
+      padding: "12px 20px",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: "500",
+      zIndex: String((config.zIndex || 9999) + 1),
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      transition: "opacity 0.3s, transform 0.3s",
+      transform: "translateX(0)",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      maxWidth: "380px",
+    });
+    notif.innerHTML = icon + '<span style="flex:1">' + message + '</span>' + closeIcon;
+
+    // Close button handler
+    var closeBtn = notif.querySelector('.notif-close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('mouseenter', function() {
+        this.style.opacity = '1';
+      });
+      closeBtn.addEventListener('mouseleave', function() {
+        this.style.opacity = '0.8';
+      });
+      closeBtn.addEventListener('click', function() {
+        notif.style.opacity = "0";
+        notif.style.transform = "translateX(20px)";
+        setTimeout(function () { notif.remove(); }, 300);
+      });
+    }
 
     document.body.appendChild(notif);
 
+    var duration = type === "error" ? 5000 : 3000;
     setTimeout(function () {
       notif.style.opacity = "0";
       notif.style.transform = "translateX(20px)";
       setTimeout(function () { notif.remove(); }, 300);
-    }, 3000);
+    }, duration);
   }
 
   // ─── Show/Hide & Animation ─────────────────────────────────────
@@ -1112,11 +1464,34 @@
   }
 
   // ─── Initialization ────────────────────────────────────────────
+  //
+  // Strategy: No client-side product page detection needed.
+  // We send the current page path to our GraphQL proxy API which uses
+  // BigCommerce's route(path:) query to determine if this is a product
+  // page AND fetch all product data in a single call.
+  //
+  // Config is fetched in parallel (starts immediately, may come from cache).
+  // Both resolve → render the bar.
+
+  // Add preconnect hint to reduce connection latency for API calls
+  (function addPreconnect() {
+    try {
+      var link = document.createElement("link");
+      link.rel = "preconnect";
+      link.href = APP_URL;
+      link.crossOrigin = "anonymous";
+      (document.head || document.documentElement).appendChild(link);
+    } catch (e) {}
+  })();
+
+  // Start config fetch IMMEDIATELY (no DOM dependency, may resolve from cache)
+  var configPromise = fetchConfig();
+
+  // Start product/route fetch IMMEDIATELY — sends the current page path
+  // to our proxy which determines page type via BigCommerce GraphQL
+  var productPromise = fetchProductByPath(window.location.pathname);
 
   function init() {
-    var productId = getProductId();
-    if (!productId) return; // Not a product page
-
     // Inject bounce animation keyframes
     var bounceStyle = document.createElement("style");
     bounceStyle.textContent =
@@ -1125,19 +1500,24 @@
       "100% { transform: translateY(0); opacity: 1; } }";
     document.head.appendChild(bounceStyle);
 
-    // Fetch config, then product data
-    fetchConfig()
-      .then(function (nestedConfig) {
-        if (!nestedConfig) return;
-        config = flattenConfig(nestedConfig);
+    // Resolve BOTH promises in parallel
+    var allPromise = Promise.all([configPromise, productPromise]);
 
+    allPromise
+      .then(function (results) {
+        var nestedConfig = results[0];
+        var productResult = results[1]; // { isProductPage, product }
+
+        // Not a product page — nothing to render
+        if (!productResult || !productResult.isProductPage || !productResult.product) return;
+
+        // No config available
+        if (!nestedConfig) return;
+
+        config = flattenConfig(nestedConfig);
         if (!config.enabled) return;
 
-        return fetchProductData(productId);
-      })
-      .then(function (productData) {
-        if (!productData || !config) return;
-        product = productData;
+        product = productResult.product;
 
         // Initialize variant state
         initSelectedVariants();
@@ -1154,7 +1534,7 @@
       });
   }
 
-  // Run when DOM is ready
+  // Run when DOM is ready (both fetches are already in flight)
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {

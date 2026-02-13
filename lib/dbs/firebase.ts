@@ -185,6 +185,39 @@ export async function getStickyBarConfig(storeHash: string): Promise<StickyBarCo
   }
 }
 
+// ─── Storefront API Token Cache ─────────────────────────────────
+
+export async function getStorefrontToken(storeHash: string): Promise<{ token: string; expiresAt: number } | null> {
+  if (!storeHash) return null;
+
+  try {
+    const ref = db.collection('stores').doc(storeHash);
+    const doc = await ref.get();
+    const data = doc.data();
+
+    if (!data?.storefrontToken || !data?.storefrontTokenExpiry) return null;
+
+    // Return null if token expires within 5 minutes (buffer)
+    if (Date.now() >= (data.storefrontTokenExpiry - 5 * 60 * 1000)) return null;
+
+    return { token: data.storefrontToken, expiresAt: data.storefrontTokenExpiry };
+  } catch (error) {
+    console.error('Error getting storefront token:', error);
+    return null;
+  }
+}
+
+export async function saveStorefrontToken(storeHash: string, token: string, expiresAt: number) {
+  if (!storeHash || !token) return;
+
+  try {
+    const ref = db.collection('stores').doc(storeHash);
+    await ref.update({ storefrontToken: token, storefrontTokenExpiry: expiresAt });
+  } catch (error) {
+    console.error('Error saving storefront token:', error);
+  }
+}
+
 export async function deleteStickyBarConfig(storeHash: string) {
   if (!storeHash) return null;
 

@@ -4,11 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, ngrok-skip-browser-warning",
 };
 
 export async function OPTIONS() {
-    return NextResponse.json(null, { status: 204, headers: corsHeaders });
+    return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
 export async function GET(req: NextRequest) {
@@ -42,7 +42,13 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(
             { config },
-            { status: 200, headers: corsHeaders }
+            {
+                status: 200,
+                headers: {
+                    ...corsHeaders,
+                    "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+                },
+            }
         );
     } catch (error: any) {
         console.error("Error fetching storefront config:", error);

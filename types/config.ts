@@ -49,7 +49,8 @@ export interface DefaultStickyBarConfig {
     imageBorderWidth: number;
 
     // Variant Styling
-    variantDisplayStyle: "buttons" | "dropdown";
+    variantOptions: VariantOptionConfig[];
+    variantShowLabels: boolean;
     variantActiveColor: string;
     variantBorderColor: string;
     variantTextColor: string;
@@ -59,15 +60,20 @@ export interface DefaultStickyBarConfig {
     quantityStyle: "plusMinus" | "dropdown" | "input";
     quantityBorderColor: string;
     quantityBorderRadius: number;
+    quantityTextColor: string;
+    quantityBgColor: string;
+    quantityButtonColor: string;
 
     // Layout
     position: "top" | "bottom" | "left" | "right";
     elements: Element[];
     elementGap: number;
+    groupGap: number;
     barOffset: number;
     barWidthMode: "full" | "contained";
     barMaxWidth: number;
-    contentAlignment: "left" | "center" | "right" | "spaceBetween";
+    contentMaxWidth: number;
+    contentAlignment: "left" | "center" | "right" | "spaceBetween" | "spaceAround" | "spaceEvenly";
     verticalAlignment: "top" | "center" | "bottom";
 
     // Behavior - Display
@@ -182,7 +188,8 @@ interface ImageStylingConfig {
 }
 
 interface VariantStylingConfig {
-    displayStyle: "buttons" | "dropdown";
+    options: VariantOptionConfig[];
+    showLabels: boolean;
     activeColor: string;
     borderColor: string;
     textColor: string;
@@ -193,6 +200,9 @@ interface QuantityStylingConfig {
     style: "plusMinus" | "dropdown" | "input";
     borderColor: string;
     borderRadius: number;
+    textColor: string;
+    bgColor: string;
+    buttonColor: string;
 }
 
 // ─── Layout Sub-configs ────────────────────────────────────────
@@ -208,12 +218,14 @@ interface PositionConfig {
 interface BarWidthConfig {
     mode: "full" | "contained";
     maxWidth: number;
-    contentAlignment: "left" | "center" | "right" | "spaceBetween";
+    contentMaxWidth: number;
+    contentAlignment: "left" | "center" | "right" | "spaceBetween" | "spaceAround" | "spaceEvenly";
     verticalAlignment: "top" | "center" | "bottom";
 }
 
 interface SpacingConfig {
     elementGap: number;
+    groupGap: number;
     barOffset: number;
 }
 
@@ -259,4 +271,11 @@ export interface Element {
     id: string;
     label: string;
     visible: boolean;
+}
+
+export type VariantDisplayType = "dropdown" | "swatch" | "radioButtons" | "rectangleList";
+
+export interface VariantOptionConfig {
+    name: string;
+    displayType: VariantDisplayType;
 }

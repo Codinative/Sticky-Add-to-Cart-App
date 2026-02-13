@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encodePayload, getBCAuth, setSession } from '../../../lib/auth';
+import { installOrUpdateScript } from '@/lib/bigcommerce/scripts';
 
 export async function GET (req: NextRequest) {
     try {
@@ -11,6 +12,21 @@ export async function GET (req: NextRequest) {
         const encodedContext = encodePayload(session); // Signed JWT to validate/ prevent tampering
 
         await setSession(session);
+
+        // Install the storefront script on the merchant's store
+        const storeHash = (session?.context || '').split('/')[1] || '';
+        const accessToken = session?.access_token || '';
+
+        if (storeHash && accessToken) {
+            try {
+                const result = await installOrUpdateScript(storeHash, accessToken);
+                console.log('Script installation on app install:', result);
+            } catch (scriptError: any) {
+                // Non-blocking: if script install fails, user can still use the app
+                // The dashboard save will retry installation as a fallback
+                console.warn('Script installation failed during app install:', scriptError.message);
+            }
+        }
 
         // Once the app has been authorized, redirect
         const baseUrl = process.env.BASE_URL || '';
