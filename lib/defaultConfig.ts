@@ -51,7 +51,11 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
     imageBorderWidth: 0,
 
     // Variant Styling
-    variantDisplayStyle: "buttons",
+    variantOptions: [
+      { name: "Size", displayType: "rectangleList" },
+      { name: "Color", displayType: "swatch" },
+    ],
+    variantShowLabels: true,
     variantActiveColor: "#2563EB",
     variantBorderColor: "#E5E7EB",
     variantTextColor: "#6B7280",
@@ -61,6 +65,9 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
     quantityStyle: "plusMinus",
     quantityBorderColor: "#E5E7EB",
     quantityBorderRadius: 8,
+    quantityTextColor: "#374151",
+    quantityBgColor: "#FFFFFF",
+    quantityButtonColor: "#9CA3AF",
 
     // Layout
     position: "bottom",
@@ -73,10 +80,12 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
       { id: "button", label: "Add to Cart Button", visible: true },
     ],
     elementGap: 12,
+    groupGap: 32,
     barOffset: 0,
     barWidthMode: "full",
     barMaxWidth: 1200,
-    contentAlignment: "center",
+    contentMaxWidth: 0,
+    contentAlignment: "spaceBetween",
     verticalAlignment: "center",
 
     // Behavior - Display

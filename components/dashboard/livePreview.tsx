@@ -51,6 +51,8 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
       center: "center",
       right: "flex-end",
       spaceBetween: "space-between",
+      spaceAround: "space-around",
+      spaceEvenly: "space-evenly",
     };
 
     // Vertical alignment mapping
@@ -60,6 +62,7 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
       bottom: "flex-end",
     };
   
+    // Bar background styling (outer shell)
     const barStyle: React.CSSProperties = {
       background: getBarBackground(),
       borderRadius: `${config.barBorderRadius}px`,
@@ -69,7 +72,15 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
       borderColor: config.barBorderWidth > 0 ? config.barBorderColor : "transparent",
       borderWidth: `${config.barBorderWidth || 0}px`,
       borderStyle: config.barBorderWidth > 0 ? "solid" : "none",
-      justifyContent: isHorizontal ? (alignmentMap[config.contentAlignment] || "center") : undefined,
+    };
+
+    // Inner content container styling (inside the background)
+    const contentStyle: React.CSSProperties = {
+      maxWidth: config.contentMaxWidth > 0 ? `${config.contentMaxWidth}px` : "none",
+      margin: "0 auto",
+      display: "flex",
+      flexDirection: isHorizontal ? "row" : "column",
+      justifyContent: isHorizontal ? (alignmentMap[config.contentAlignment] || "space-between") : undefined,
       alignItems: isHorizontal ? (verticalAlignMap[config.verticalAlignment] || "center") : "center",
     };
 
@@ -80,6 +91,11 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
     } : {};
   
     const visibleElements = config.elements.filter((el: { id: string, visible: boolean }) => el.visible);
+
+    // Split elements into left (info) and right (action) groups
+    const LEFT_IDS = new Set(["image", "title", "price"]);
+    const leftElements = visibleElements.filter((el: { id: string }) => LEFT_IDS.has(el.id));
+    const rightElements = visibleElements.filter((el: { id: string }) => !LEFT_IDS.has(el.id));
 
     // Button style computation
     const getButtonStyle = (): React.CSSProperties => {
@@ -193,58 +209,155 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
               )}
             </div>
           );
-        case "variants":
+        case "variants": {
+          // Mock data for preview
+          const mockVariants: Record<string, { values: string[], active: string }> = {
+            Size: { values: ["S", "M", "L"], active: "M" },
+            Color: { values: ["Red", "Blue", "Green"], active: "Blue" },
+          };
+
+          // Lookup display type from config.variantOptions by name (case-insensitive), fallback to dropdown
+          const getDisplayType = (name: string): string => {
+            const match = (config.variantOptions || []).find(
+              (o: { name: string; displayType: string }) => o.name.toLowerCase() === name.toLowerCase()
+            );
+            return match?.displayType || "dropdown";
+          };
+
+          const renderVariantControl = (name: string, values: string[], activeVal: string, displayType: string) => {
+            switch (displayType) {
+              case "dropdown":
+                return (
+                  <div 
+                    className="flex items-center gap-1 px-2 py-1.5 text-xs border bg-white"
+                    style={{ 
+                      borderColor: config.variantBorderColor,
+                      borderRadius: `${config.variantBorderRadius}px`,
+                      color: config.variantTextColor,
+                      minWidth: isMobile ? "60px" : "80px",
+                    }}
+                  >
+                    <span className="flex-1">{activeVal}</span>
+                    <Icons.ChevronDown size={12} />
+                  </div>
+                );
+              case "swatch":
+                return (
+                  <div className="flex gap-1.5 flex-wrap">
+                    {values.map((v) => {
+                      const isActive = v === activeVal;
+                      return (
+                        <div
+                          key={v}
+                          className="flex items-center justify-center border-2 transition-colors"
+                          style={{
+                            width: isMobile ? "24px" : "28px",
+                            height: isMobile ? "24px" : "28px",
+                            borderRadius: `${config.variantBorderRadius}px`,
+                            borderColor: isActive ? config.variantActiveColor : config.variantBorderColor,
+                            backgroundColor: isActive ? `${config.variantActiveColor}18` : "white",
+                            fontSize: `${Math.max(baseFontSize - 4, 9)}px`,
+                            fontWeight: 600,
+                            color: isActive ? config.variantActiveColor : config.variantTextColor,
+                            cursor: "pointer",
+                          }}
+                          title={v}
+                        >
+                          {v.substring(0, 2)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              case "radioButtons":
+                return (
+                  <div className="flex gap-2.5 flex-wrap">
+                    {values.map((v) => {
+                      const isActive = v === activeVal;
+                      return (
+                        <div key={v} className="flex items-center gap-1" style={{ cursor: "pointer" }}>
+                          <div 
+                            className="rounded-full border-2 flex items-center justify-center"
+                            style={{
+                              width: "14px",
+                              height: "14px",
+                              borderColor: isActive ? config.variantActiveColor : config.variantBorderColor,
+                            }}
+                          >
+                            {isActive && (
+                              <div className="rounded-full" style={{ width: "7px", height: "7px", backgroundColor: config.variantActiveColor }} />
+                            )}
+                          </div>
+                          <span style={{ fontSize: `${Math.max(baseFontSize - 2, 11)}px`, color: isActive ? config.variantActiveColor : config.variantTextColor }}>{v}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              case "rectangleList":
+              default:
+                return (
+                  <div className="flex gap-1.5 flex-wrap">
+                    {values.map((v) => {
+                      const isActive = v === activeVal;
+                      return (
+                        <button
+                          key={v}
+                          className="font-medium border transition-colors"
+                          style={{
+                            padding: isMobile ? "2px 8px" : "4px 12px",
+                            fontSize: `${Math.max(baseFontSize - 2, 11)}px`,
+                            borderRadius: `${config.variantBorderRadius}px`,
+                            borderColor: isActive ? config.variantActiveColor : config.variantBorderColor,
+                            backgroundColor: isActive ? `${config.variantActiveColor}12` : "white",
+                            color: isActive ? config.variantActiveColor : config.variantTextColor,
+                          }}
+                        >
+                          {v}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+            }
+          };
+
           return (
-            <div key={el.id} className={`shrink-0 ${isVertical ? "w-full" : ""}`}>
-              {config.variantDisplayStyle === "dropdown" ? (
-                <div 
-                  className="flex items-center gap-1 px-2 py-1.5 text-xs border bg-white"
-                  style={{ 
-                    borderColor: config.variantBorderColor,
-                    borderRadius: `${config.variantBorderRadius}px`,
-                    color: config.variantTextColor,
-                    minWidth: isMobile ? "60px" : "80px",
-                  }}
-                >
-                  <span className="flex-1">Medium</span>
-                  <Icons.ChevronDown size={12} />
-                </div>
-              ) : (
-                <div className={`flex gap-1.5 ${isVertical ? "justify-center" : ""}`}>
-                  {["S", "M", "L"].map((s) => (
-                    <button
-                      key={s}
-                      className="font-medium border transition-colors"
-                      style={{
-                        padding: isMobile ? "2px 8px" : "4px 12px",
-                        fontSize: `${Math.max(baseFontSize - 2, 11)}px`,
-                        borderRadius: `${config.variantBorderRadius}px`,
-                        borderColor: s === "M" ? config.variantActiveColor : config.variantBorderColor,
-                        backgroundColor: s === "M" ? `${config.variantActiveColor}12` : "white",
-                        color: s === "M" ? config.variantActiveColor : config.variantTextColor,
-                      }}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div key={el.id} className={`shrink-0 ${isVertical ? "w-full" : ""}`} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {Object.entries(mockVariants).map(([name, data]) => {
+                const displayType = getDisplayType(name);
+                return (
+                  <div key={name} className="flex items-center gap-2">
+                    {config.variantShowLabels !== false && (
+                      <span style={{ fontSize: `${Math.max(baseFontSize - 2, 11)}px`, color: config.variantTextColor, fontWeight: 500, whiteSpace: "nowrap" }}>
+                        {name}:
+                      </span>
+                    )}
+                    {renderVariantControl(name, data.values, data.active, displayType)}
+                  </div>
+                );
+              })}
             </div>
           );
+        }
         case "quantity":
           return (
             <div key={el.id} className={`shrink-0 ${isVertical ? "mx-auto" : ""}`}>
               {config.quantityStyle === "dropdown" ? (
                 <div 
-                  className="flex items-center gap-1 px-2 py-1.5 text-xs border bg-white"
+                  className="flex items-center gap-1 px-2 py-1.5 text-xs border"
                   style={{ 
                     borderColor: config.quantityBorderColor,
                     borderRadius: `${config.quantityBorderRadius}px`,
+                    backgroundColor: config.quantityBgColor || "#FFFFFF",
+                    color: config.quantityTextColor || "#374151",
                     minWidth: "50px",
                   }}
                 >
-                  <span className="flex-1 text-gray-700">1</span>
-                  <Icons.ChevronDown size={12} />
+                  <span className="flex-1">1</span>
+                  <span style={{ color: config.quantityButtonColor || "#9CA3AF" }}>
+                    <Icons.ChevronDown size={12} />
+                  </span>
                 </div>
               ) : config.quantityStyle === "input" ? (
                 <div 
@@ -252,9 +365,10 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                   style={{ 
                     borderColor: config.quantityBorderColor,
                     borderRadius: `${config.quantityBorderRadius}px`,
+                    backgroundColor: config.quantityBgColor || "#FFFFFF",
                   }}
                 >
-                  <span className="px-3 py-1 text-xs font-medium text-gray-700 inline-block" style={{ minWidth: "40px", textAlign: "center" }}>1</span>
+                  <span className="px-3 py-1 text-xs font-medium inline-block" style={{ minWidth: "40px", textAlign: "center", color: config.quantityTextColor || "#374151" }}>1</span>
                 </div>
               ) : (
                 <div 
@@ -262,11 +376,12 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                   style={{ 
                     borderColor: config.quantityBorderColor,
                     borderRadius: `${config.quantityBorderRadius}px`,
+                    backgroundColor: config.quantityBgColor || "#FFFFFF",
                   }}
                 >
-                  <button className="px-2 py-1 text-gray-400 hover:bg-gray-50 text-xs">−</button>
-                  <span className="px-3 py-1 text-xs font-medium text-gray-700" style={{ borderLeft: `1px solid ${config.quantityBorderColor}`, borderRight: `1px solid ${config.quantityBorderColor}` }}>1</span>
-                  <button className="px-2 py-1 text-gray-400 hover:bg-gray-50 text-xs">+</button>
+                  <button className="px-2 py-1 text-xs" style={{ color: config.quantityButtonColor || "#9CA3AF", background: "none", border: "none" }}>−</button>
+                  <span className="px-3 py-1 text-xs font-medium" style={{ color: config.quantityTextColor || "#374151", borderLeft: `1px solid ${config.quantityBorderColor}`, borderRight: `1px solid ${config.quantityBorderColor}` }}>1</span>
+                  <button className="px-2 py-1 text-xs" style={{ color: config.quantityButtonColor || "#9CA3AF", background: "none", border: "none" }}>+</button>
                 </div>
               )}
             </div>
@@ -374,14 +489,32 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                 }}
               >
                 <div style={barContainerStyle}>
-                  <div
-                    className={`flex ${barFlexDirection} relative`}
-                    style={{
-                      ...barStyle,
-                      gap: `${config.elementGap || 12}px`,
-                    }}
-                  >
-                    {visibleElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
+                  {/* Bar background shell */}
+                  <div className="relative" style={barStyle}>
+                    {/* Inner content container */}
+                    <div
+                      style={{
+                        ...contentStyle,
+                        gap: isHorizontal && leftElements.length > 0 && rightElements.length > 0
+                          ? `${config.groupGap ?? 32}px`
+                          : `${config.elementGap || 12}px`,
+                      }}
+                    >
+                      {isHorizontal && leftElements.length > 0 && rightElements.length > 0 ? (
+                        <>
+                          {/* Left group: image, title, price */}
+                          <div className="flex items-center" style={{ gap: `${config.elementGap || 12}px`, minWidth: 0 }}>
+                            {leftElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
+                          </div>
+                          {/* Right group: variants, quantity, button */}
+                          <div className="flex items-center shrink-0" style={{ gap: `${config.elementGap || 12}px` }}>
+                            {rightElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
+                          </div>
+                        </>
+                      ) : (
+                        visibleElements.map((el: { id: string, visible: boolean }) => renderElement(el))
+                      )}
+                    </div>
                     
                     {/* Close Button */}
                     {config.showCloseButton && (

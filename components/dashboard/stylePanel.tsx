@@ -289,15 +289,78 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
         {/* ─── Variant Selector ──────────────────────────────── */}
         <SectionCard title="Variant Selector" icon={<Icons.Grid size={16} />} defaultOpen={false}>
           <div className="space-y-5">
-            <SelectField
-              label="Display Style"
-              value={config.variantDisplayStyle}
-              onChange={(v) => updateConfig("variantDisplayStyle", v)}
-              options={[
-                { value: "buttons", label: "Button Group" },
-                { value: "dropdown", label: "Dropdown Select" },
-              ]}
+            {/* Show Labels Toggle */}
+            <Toggle
+              label="Show Variant Labels"
+              description="Display option names (e.g. Size, Color) next to variant controls"
+              checked={config.variantShowLabels ?? true}
+              onChange={(v) => updateConfig("variantShowLabels", v)}
             />
+
+            <div className="border-t border-gray-100 pt-4" />
+
+            {/* Per-Option Display Types */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Variant Option Types</label>
+              <p className="text-xs text-gray-400 mb-2">
+                Configure the display type for each variant option. Names must match your BigCommerce product option names exactly. Unconfigured options default to Dropdown.
+              </p>
+              <div className="space-y-2">
+                {(config.variantOptions || []).map((opt: { name: string; displayType: string }, idx: number) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={opt.name}
+                      placeholder="Option name..."
+                      onChange={(e) => {
+                        const updated = [...config.variantOptions];
+                        updated[idx] = { ...updated[idx], name: e.target.value };
+                        updateConfig("variantOptions", updated);
+                      }}
+                      className="flex-1 min-w-0 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
+                    />
+                    <select
+                      value={opt.displayType}
+                      onChange={(e) => {
+                        const updated = [...config.variantOptions];
+                        updated[idx] = { ...updated[idx], displayType: e.target.value };
+                        updateConfig("variantOptions", updated);
+                      }}
+                      className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
+                    >
+                      <option value="dropdown">Dropdown</option>
+                      <option value="swatch">Swatch</option>
+                      <option value="radioButtons">Radio Buttons</option>
+                      <option value="rectangleList">Rectangle List</option>
+                    </select>
+                    <button
+                      onClick={() => {
+                        const updated = config.variantOptions.filter((_: any, i: number) => i !== idx);
+                        updateConfig("variantOptions", updated);
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Remove"
+                    >
+                      <Icons.X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  const updated = [...(config.variantOptions || []), { name: "", displayType: "dropdown" }];
+                  updateConfig("variantOptions", updated);
+                }}
+                className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 mt-1 px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors w-fit"
+              >
+                <Icons.Plus size={14} />
+                Add Variant Option
+              </button>
+            </div>
+
+            <div className="border-t border-gray-100 pt-4" />
+
+            {/* Shared Variant Styling */}
             <ColorPicker label="Active / Selected Color" value={config.variantActiveColor} onChange={(v) => updateConfig("variantActiveColor", v)} />
             <ColorPicker label="Border Color" value={config.variantBorderColor} onChange={(v) => updateConfig("variantBorderColor", v)} />
             <ColorPicker label="Text Color" value={config.variantTextColor} onChange={(v) => updateConfig("variantTextColor", v)} />
@@ -318,6 +381,9 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
                 { value: "input", label: "Number Input" },
               ]}
             />
+            <ColorPicker label="Text Color" value={config.quantityTextColor} onChange={(v) => updateConfig("quantityTextColor", v)} />
+            <ColorPicker label="Background Color" value={config.quantityBgColor} onChange={(v) => updateConfig("quantityBgColor", v)} />
+            <ColorPicker label="Button / Icon Color" value={config.quantityButtonColor} onChange={(v) => updateConfig("quantityButtonColor", v)} />
             <ColorPicker label="Border Color" value={config.quantityBorderColor} onChange={(v) => updateConfig("quantityBorderColor", v)} />
             <RangeSlider label="Border Radius" value={config.quantityBorderRadius} onChange={(v) => updateConfig("quantityBorderRadius", v)} max={16} />
           </div>

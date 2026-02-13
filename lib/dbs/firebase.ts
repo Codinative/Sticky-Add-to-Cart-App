@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { randomUUID } from 'crypto';
 import { SessionProps } from '../../types';
 import { StickyBarConfig } from '@/types/config';
 
@@ -111,6 +112,55 @@ export async function deleteUser(userId: string, storeHash: string) {
   }
 }
 
+// ─── Unique Store ID ───────────────────────────────────────────
+
+export async function getOrCreateStoreUniqueId(storeHash: string): Promise<string | null> {
+  if (!storeHash) return null;
+
+  try {
+    const ref = db.collection('stores').doc(storeHash);
+    const doc = await ref.get();
+
+    if (!doc.exists) return null;
+
+    const existing = doc.data()?.uniqueStoreId;
+    if (existing) return existing;
+
+    const uniqueStoreId = randomUUID();
+    await ref.update({ uniqueStoreId });
+    return uniqueStoreId;
+  } catch (error) {
+    console.error('Error in getOrCreateStoreUniqueId:', error);
+    return null;
+  }
+}
+
+export async function getStoreByUniqueId(uniqueStoreId: string): Promise<{ storeHash: string; accessToken: string } | null> {
+  if (!uniqueStoreId) return null;
+
+  try {
+    const snapshot = await db.collection('stores')
+      .where('uniqueStoreId', '==', uniqueStoreId)
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) return null;
+
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+
+    return {
+      storeHash: doc.id,
+      accessToken: data?.accessToken || '',
+    };
+  } catch (error) {
+    console.error('Error in getStoreByUniqueId:', error);
+    return null;
+  }
+}
+
+// ─── Sticky Bar Config ─────────────────────────────────────────
+
 export async function setStickyBarConfig(storeHash: string, config: StickyBarConfig) {
   if (!storeHash || !config) return null;
 
@@ -132,6 +182,39 @@ export async function getStickyBarConfig(storeHash: string): Promise<StickyBarCo
     return doc.data() as StickyBarConfig;
   } catch (error) {
     return null;
+  }
+}
+
+// ─── Storefront API Token Cache ─────────────────────────────────
+
+export async function getStorefrontToken(storeHash: string): Promise<{ token: string; expiresAt: number } | null> {
+  if (!storeHash) return null;
+
+  try {
+    const ref = db.collection('stores').doc(storeHash);
+    const doc = await ref.get();
+    const data = doc.data();
+
+    if (!data?.storefrontToken || !data?.storefrontTokenExpiry) return null;
+
+    // Return null if token expires within 5 minutes (buffer)
+    if (Date.now() >= (data.storefrontTokenExpiry - 5 * 60 * 1000)) return null;
+
+    return { token: data.storefrontToken, expiresAt: data.storefrontTokenExpiry };
+  } catch (error) {
+    console.error('Error getting storefront token:', error);
+    return null;
+  }
+}
+
+export async function saveStorefrontToken(storeHash: string, token: string, expiresAt: number) {
+  if (!storeHash || !token) return;
+
+  try {
+    const ref = db.collection('stores').doc(storeHash);
+    await ref.update({ storefrontToken: token, storefrontTokenExpiry: expiresAt });
+  } catch (error) {
+    console.error('Error saving storefront token:', error);
   }
 }
 

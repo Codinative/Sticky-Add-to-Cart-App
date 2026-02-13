@@ -124,19 +124,6 @@ export default function BehaviorPanel({ config, updateConfig }: { config: any, u
         {/* ─── Cart Behavior ─────────────────────────────────── */}
         <SectionCard title="Cart Behavior" icon={<Icons.ShoppingCart size={16} />}>
           <div className="space-y-5">
-            <SelectField
-              label="After Add to Cart"
-              value={config.cartAction}
-              onChange={(v) => updateConfig("cartAction", v)}
-              options={[
-                { value: "stayOnPage", label: "Stay on page (no redirect)" },
-                { value: "redirect", label: "Redirect to cart page" },
-                { value: "drawer", label: "Open cart drawer / sidebar" },
-                { value: "flyToCart", label: "Fly-to-cart animation" },
-              ]}
-            />
-
-            <div className="border-t border-gray-100 pt-4" />
 
             <Toggle
               checked={config.showSuccessNotification}

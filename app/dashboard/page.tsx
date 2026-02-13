@@ -75,7 +75,8 @@ export default function StickyBarDashboard() {
           borderWidth: config.imageBorderWidth,
         },
         variantStyling: {
-          displayStyle: config.variantDisplayStyle,
+          options: config.variantOptions,
+          showLabels: config.variantShowLabels,
           activeColor: config.variantActiveColor,
           borderColor: config.variantBorderColor,
           textColor: config.variantTextColor,
@@ -85,6 +86,9 @@ export default function StickyBarDashboard() {
           style: config.quantityStyle,
           borderColor: config.quantityBorderColor,
           borderRadius: config.quantityBorderRadius,
+          textColor: config.quantityTextColor,
+          bgColor: config.quantityBgColor,
+          buttonColor: config.quantityButtonColor,
         },
       },
       layout: {
@@ -97,11 +101,13 @@ export default function StickyBarDashboard() {
         barWidth: {
           mode: config.barWidthMode,
           maxWidth: config.barMaxWidth,
+          contentMaxWidth: config.contentMaxWidth,
           contentAlignment: config.contentAlignment,
           verticalAlignment: config.verticalAlignment,
         },
         spacing: {
           elementGap: config.elementGap,
+          groupGap: config.groupGap,
           barOffset: config.barOffset,
         },
       },
@@ -192,7 +198,8 @@ export default function StickyBarDashboard() {
       imageBorderWidth: nested.styling?.imageStyling?.borderWidth ?? d.imageBorderWidth,
 
       // Variant Styling
-      variantDisplayStyle: nested.styling?.variantStyling?.displayStyle ?? d.variantDisplayStyle,
+      variantOptions: nested.styling?.variantStyling?.options ?? d.variantOptions,
+      variantShowLabels: nested.styling?.variantStyling?.showLabels ?? d.variantShowLabels,
       variantActiveColor: nested.styling?.variantStyling?.activeColor ?? d.variantActiveColor,
       variantBorderColor: nested.styling?.variantStyling?.borderColor ?? d.variantBorderColor,
       variantTextColor: nested.styling?.variantStyling?.textColor ?? d.variantTextColor,
@@ -202,14 +209,19 @@ export default function StickyBarDashboard() {
       quantityStyle: nested.styling?.quantityStyling?.style ?? d.quantityStyle,
       quantityBorderColor: nested.styling?.quantityStyling?.borderColor ?? d.quantityBorderColor,
       quantityBorderRadius: nested.styling?.quantityStyling?.borderRadius ?? d.quantityBorderRadius,
+      quantityTextColor: nested.styling?.quantityStyling?.textColor ?? d.quantityTextColor,
+      quantityBgColor: nested.styling?.quantityStyling?.bgColor ?? d.quantityBgColor,
+      quantityButtonColor: nested.styling?.quantityStyling?.buttonColor ?? d.quantityButtonColor,
 
       // Layout
       position: nested.layout?.position?.position ?? d.position,
       elements: nested.layout?.elementArrangement?.elements ?? d.elements,
       elementGap: nested.layout?.spacing?.elementGap ?? d.elementGap,
+      groupGap: nested.layout?.spacing?.groupGap ?? d.groupGap,
       barOffset: nested.layout?.spacing?.barOffset ?? d.barOffset,
       barWidthMode: nested.layout?.barWidth?.mode ?? d.barWidthMode,
       barMaxWidth: nested.layout?.barWidth?.maxWidth ?? d.barMaxWidth,
+      contentMaxWidth: nested.layout?.barWidth?.contentMaxWidth ?? d.contentMaxWidth,
       contentAlignment: nested.layout?.barWidth?.contentAlignment ?? d.contentAlignment,
       verticalAlignment: nested.layout?.barWidth?.verticalAlignment ?? d.verticalAlignment,
 
@@ -285,6 +297,19 @@ export default function StickyBarDashboard() {
       }
 
       setSavedConfig(config);
+
+      // Install/update the storefront script on the merchant's store
+      try {
+        const scriptResponse = await fetch(`/api/bc-scripts?context=${encodeURIComponent(encodedContext)}`, {
+          method: 'POST',
+        });
+        if (!scriptResponse.ok) {
+          console.warn('Script installation warning:', await scriptResponse.text());
+        }
+      } catch (scriptError: any) {
+        console.warn('Script installation warning:', scriptError.message);
+      }
+
       showToast('Settings saved successfully', 'success');
     } catch (error: any) {
       console.error('Error saving config:', error.message);

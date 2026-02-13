@@ -4,7 +4,7 @@ import { Icons } from "./icons";
 export default function SectionCard({ title, icon, children, defaultOpen = true }: { title: string, icon: React.ReactNode, children: React.ReactNode, defaultOpen?: boolean }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:border-gray-300">
+      <div className="bg-white rounded-lg border border-gray-200 transition-all hover:border-gray-300">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 transition-colors"
