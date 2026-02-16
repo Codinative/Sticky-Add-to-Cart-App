@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { encodePayload, getBCAuth, setSession } from '../../../lib/auth';
 import { installOrUpdateScript } from '@/lib/bigcommerce/scripts';
+import { getStickyBarConfig, setStickyBarConfig } from '@/lib/dbs/firebase';
+import { defaultStickyBarConfig } from '@/lib/defaultConfig';
+import { flattenToNestedConfig } from '@/lib/configConverter';
 
 export async function GET (req: NextRequest) {
     try {
@@ -13,10 +16,27 @@ export async function GET (req: NextRequest) {
 
         await setSession(session);
 
-        // Install the storefront script on the merchant's store
+        // Extract store information
         const storeHash = (session?.context || '').split('/')[1] || '';
         const accessToken = session?.access_token || '';
 
+        // Save default config to Firebase if it doesn't exist
+        if (storeHash) {
+            try {
+                const existingConfig = await getStickyBarConfig(storeHash);
+                if (!existingConfig) {
+                    console.log('No existing config found. Saving default configuration for store:', storeHash);
+                    const defaultNestedConfig = flattenToNestedConfig(defaultStickyBarConfig);
+                    await setStickyBarConfig(storeHash, defaultNestedConfig);
+                    console.log('Default configuration saved successfully');
+                }
+            } catch (configError: any) {
+                console.error('Failed to save default config:', configError.message);
+                // Non-blocking: config will be saved on first dashboard save
+            }
+        }
+
+        // Install the storefront script on the merchant's store
         if (storeHash && accessToken) {
             try {
                 const result = await installOrUpdateScript(storeHash, accessToken);
