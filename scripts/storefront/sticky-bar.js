@@ -175,38 +175,7 @@
   // Shared headers for all API requests (includes ngrok bypass for dev)
   var API_HEADERS = { "ngrok-skip-browser-warning": "1" };
 
-  // ─── Config Caching ───────────────────────────────────────────
-  var CONFIG_CACHE_KEY = "satc-config-" + STORE_ID;
-  var CONFIG_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-  function getCachedConfig() {
-    try {
-      var raw = sessionStorage.getItem(CONFIG_CACHE_KEY);
-      if (!raw) return null;
-      var cached = JSON.parse(raw);
-      if (Date.now() - cached.ts > CONFIG_CACHE_TTL) {
-        sessionStorage.removeItem(CONFIG_CACHE_KEY);
-        return null;
-      }
-      return cached.data;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function setCachedConfig(data) {
-    try {
-      sessionStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data }));
-    } catch (e) {}
-  }
-
   function fetchConfig() {
-    // Return cached config immediately if available
-    var cached = getCachedConfig();
-    if (cached) {
-      return Promise.resolve(cached);
-    }
-
     return fetch(APP_URL + "/api/storefront/config?sid=" + encodeURIComponent(STORE_ID), {
       headers: API_HEADERS,
     })
@@ -215,9 +184,7 @@
         return res.json();
       })
       .then(function (data) {
-        var cfg = data.config || null;
-        if (cfg) setCachedConfig(cfg);
-        return cfg;
+        return data.config || null;
       });
   }
 
