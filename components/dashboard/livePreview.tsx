@@ -7,8 +7,10 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
     const containerWidth = isMobile ? "max-w-[375px]" : "w-full";
     const isHorizontal = config.position === "top" || config.position === "bottom";
     const isVertical = config.position === "left" || config.position === "right";
-    
-    const baseFontSize = typeof config.fontSize === 'number' && config.fontSize > 0 ? config.fontSize : 14;
+
+    // Scale down sizes for mobile preview
+    const mobileScale = isMobile ? 0.65 : 1;
+    const baseFontSize = typeof config.fontSize === 'number' && config.fontSize > 0 ? Math.round((config.fontSize * mobileScale)) : (isMobile ? 9 : 14);
   
     // Shadow mapping
     const shadowMap: Record<string, string> = {
@@ -65,12 +67,12 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
     // Bar background styling (outer shell)
     const barStyle: React.CSSProperties = {
       background: getBarBackground(),
-      borderRadius: `${config.barBorderRadius}px`,
-      padding: `${config.barPadding}px`,
+      borderRadius: `${Math.round(config.barBorderRadius * mobileScale)}px`,
+      padding: `${Math.round(config.barPadding * mobileScale)}px`,
       boxShadow: getShadow(),
       opacity: (config.barOpacity || 100) / 100,
       borderColor: config.barBorderWidth > 0 ? config.barBorderColor : "transparent",
-      borderWidth: `${config.barBorderWidth || 0}px`,
+      borderWidth: `${Math.round((config.barBorderWidth || 0) * mobileScale)}px`,
       borderStyle: config.barBorderWidth > 0 ? "solid" : "none",
     };
 
@@ -81,7 +83,9 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
       display: "flex",
       flexDirection: isHorizontal ? "row" : "column",
       justifyContent: isHorizontal ? (alignmentMap[config.contentAlignment] || "space-between") : undefined,
-      alignItems: isHorizontal ? (verticalAlignMap[config.verticalAlignment] || "center") : "center",
+      alignItems: isHorizontal ? (isMobile ? "flex-start" : (verticalAlignMap[config.verticalAlignment] || "center")) : "center",
+      alignContent: isMobile && isHorizontal ? "flex-start" : undefined,
+      rowGap: isMobile && isHorizontal ? `${Math.round((config.elementGap || 12) * mobileScale)}px` : undefined,
     };
 
     // Contained width style
@@ -99,14 +103,18 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
 
     // Button style computation
     const getButtonStyle = (): React.CSSProperties => {
+      const paddingY = Math.round((config.buttonPaddingY || 10) * mobileScale);
+      const paddingX = Math.round((config.buttonPaddingX || 24) * mobileScale);
+      const borderRadius = Math.round(config.buttonBorderRadius * mobileScale);
+
       const style: React.CSSProperties = {
         color: config.buttonTextColor,
-        padding: `${config.buttonPaddingY || 10}px ${config.buttonPaddingX || 24}px`,
+        padding: `${paddingY}px ${paddingX}px`,
         fontSize: `${baseFontSize}px`,
         fontFamily: config.fontFamily,
-        borderRadius: config.buttonStyle === "pill" ? "9999px" : `${config.buttonBorderRadius}px`,
+        borderRadius: config.buttonStyle === "pill" ? "9999px" : `${borderRadius}px`,
         fontWeight: config.buttonFontWeight || "600",
-        boxShadow: buttonShadowMap[config.buttonShadow] || "none",
+        boxShadow: isMobile ? "none" : (buttonShadowMap[config.buttonShadow] || "none"),
       };
 
       if (config.buttonStyle === "filled" || config.buttonStyle === "pill") {
@@ -114,7 +122,7 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
         style.border = "none";
       } else if (config.buttonStyle === "outline") {
         style.backgroundColor = "transparent";
-        style.border = `${config.buttonBorderWidth || 2}px solid ${config.buttonBorderColor || config.buttonBgColor}`;
+        style.border = `${Math.max(Math.round((config.buttonBorderWidth || 2) * mobileScale), 1)}px solid ${config.buttonBorderColor || config.buttonBgColor}`;
         style.color = config.buttonBorderColor || config.buttonBgColor;
       } else if (config.buttonStyle === "ghost") {
         style.backgroundColor = "transparent";
@@ -128,20 +136,21 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
     const renderElement = (el: { id: string, visible: boolean }) => {
       switch (el.id as "image" | "title" | "price" | "variants" | "quantity" | "button") {
         case "image":
+          const scaledImageSize = Math.round(config.imageSize * mobileScale);
           return (
             <div
               key={el.id}
               className="shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center"
-              style={{ 
-                width: isHorizontal ? (isMobile ? Math.min(config.imageSize, 40) : config.imageSize) : "100%", 
-                height: isHorizontal ? (isMobile ? Math.min(config.imageSize, 40) : config.imageSize) : 60,
-                borderRadius: `${config.imageBorderRadius}px`,
-                borderWidth: `${config.imageBorderWidth || 0}px`,
+              style={{
+                width: isHorizontal ? scaledImageSize : "100%",
+                height: isHorizontal ? scaledImageSize : Math.round(60 * mobileScale),
+                borderRadius: `${Math.round(config.imageBorderRadius * mobileScale)}px`,
+                borderWidth: `${Math.round((config.imageBorderWidth || 0) * mobileScale)}px`,
                 borderColor: config.imageBorderWidth > 0 ? config.imageBorderColor : "transparent",
                 borderStyle: config.imageBorderWidth > 0 ? "solid" : "none",
               }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5">
+              <svg width={isMobile ? "16" : "24"} height={isMobile ? "16" : "24"} viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5">
                 <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
               </svg>
             </div>
@@ -174,10 +183,10 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
         case "price":
           return (
             <div key={el.id} className={`shrink-0 ${isVertical ? "w-full text-center" : ""}`} style={{ fontFamily: config.fontFamily }}>
-              <span 
-                style={{ 
-                  color: config.priceColor, 
-                  fontSize: `${Math.max(baseFontSize + 4, 16)}px`,
+              <span
+                style={{
+                  color: config.priceColor,
+                  fontSize: `${Math.max(baseFontSize + (isMobile ? 2 : 4), isMobile ? 10 : 16)}px`,
                   fontWeight: config.priceFontWeight || "700",
                 }}
               >
@@ -185,9 +194,9 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
               </span>
               {!isMobile && (
                 config.comparePriceStyle === "badge" ? (
-                  <span 
+                  <span
                     className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold"
-                    style={{ 
+                    style={{
                       backgroundColor: `${config.discountedPriceColor}20`,
                       color: config.discountedPriceColor,
                       fontSize: `${Math.max(baseFontSize - 4, 9)}px`,
@@ -196,9 +205,9 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                     -25%
                   </span>
                 ) : (
-                  <span 
-                    className="line-through ml-1.5" 
-                    style={{ 
+                  <span
+                    className="line-through ml-1.5"
+                    style={{
                       color: config.discountedPriceColor,
                       fontSize: `${Math.max(baseFontSize - 2, 11)}px`
                     }}
@@ -225,25 +234,30 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
           };
 
           const renderVariantControl = (name: string, values: string[], activeVal: string, displayType: string) => {
+            const variantBorderRadius = Math.round(config.variantBorderRadius * mobileScale);
             switch (displayType) {
               case "dropdown":
                 return (
-                  <div 
-                    className="flex items-center gap-1 px-2 py-1.5 text-xs border bg-white"
-                    style={{ 
+                  <div
+                    className="flex items-center border bg-white"
+                    style={{
+                      gap: `${isMobile ? 2 : 4}px`,
+                      padding: `${isMobile ? 3 : 6}px ${isMobile ? 6 : 8}px`,
+                      fontSize: `${baseFontSize}px`,
                       borderColor: config.variantBorderColor,
-                      borderRadius: `${config.variantBorderRadius}px`,
+                      borderRadius: `${variantBorderRadius}px`,
                       color: config.variantTextColor,
-                      minWidth: isMobile ? "60px" : "80px",
+                      minWidth: isMobile ? "40px" : "80px",
                     }}
                   >
-                    <span className="flex-1">{activeVal}</span>
-                    <Icons.ChevronDown size={12} />
+                    <span className="flex-1 truncate">{activeVal}</span>
+                    <Icons.ChevronDown size={isMobile ? 8 : 12} />
                   </div>
                 );
               case "swatch":
+                const swatchSize = Math.round(28 * mobileScale);
                 return (
-                  <div className="flex gap-1.5 flex-wrap">
+                  <div className="flex gap-1 flex-wrap">
                     {values.map((v) => {
                       const isActive = v === activeVal;
                       return (
@@ -251,19 +265,19 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                           key={v}
                           className="flex items-center justify-center border-2 transition-colors"
                           style={{
-                            width: isMobile ? "24px" : "28px",
-                            height: isMobile ? "24px" : "28px",
-                            borderRadius: `${config.variantBorderRadius}px`,
+                            width: `${swatchSize}px`,
+                            height: `${swatchSize}px`,
+                            borderRadius: `${variantBorderRadius}px`,
                             borderColor: isActive ? config.variantActiveColor : config.variantBorderColor,
                             backgroundColor: isActive ? `${config.variantActiveColor}18` : "white",
-                            fontSize: `${Math.max(baseFontSize - 4, 9)}px`,
+                            fontSize: `${Math.max(baseFontSize - 3, 7)}px`,
                             fontWeight: 600,
                             color: isActive ? config.variantActiveColor : config.variantTextColor,
                             cursor: "pointer",
                           }}
                           title={v}
                         >
-                          {v.substring(0, 2)}
+                          {v.substring(0, isMobile ? 1 : 2)}
                         </div>
                       );
                     })}
@@ -297,17 +311,18 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
               case "rectangleList":
               default:
                 return (
-                  <div className="flex gap-1.5 flex-wrap">
+                  <div className="flex gap-1 flex-wrap">
                     {values.map((v) => {
                       const isActive = v === activeVal;
+                      const rectPadding = isMobile ? "2px 4px" : "4px 12px";
                       return (
                         <button
                           key={v}
                           className="font-medium border transition-colors"
                           style={{
-                            padding: isMobile ? "2px 8px" : "4px 12px",
-                            fontSize: `${Math.max(baseFontSize - 2, 11)}px`,
-                            borderRadius: `${config.variantBorderRadius}px`,
+                            padding: rectPadding,
+                            fontSize: `${Math.max(baseFontSize - 2, 7)}px`,
+                            borderRadius: `${variantBorderRadius}px`,
                             borderColor: isActive ? config.variantActiveColor : config.variantBorderColor,
                             backgroundColor: isActive ? `${config.variantActiveColor}12` : "white",
                             color: isActive ? config.variantActiveColor : config.variantTextColor,
@@ -323,13 +338,13 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
           };
 
           return (
-            <div key={el.id} className={`shrink-0 ${isVertical ? "w-full" : ""}`} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <div key={el.id} className={`shrink-0 ${isVertical ? "w-full" : ""}`} style={{ display: "flex", flexDirection: "column", gap: `${isMobile ? 3 : 6}px` }}>
               {Object.entries(mockVariants).map(([name, data]) => {
                 const displayType = getDisplayType(name);
                 return (
-                  <div key={name} className="flex items-center gap-2">
+                  <div key={name} className="flex items-center flex-wrap" style={{ gap: `${isMobile ? 4 : 8}px` }}>
                     {config.variantShowLabels !== false && (
-                      <span style={{ fontSize: `${Math.max(baseFontSize - 2, 11)}px`, color: config.variantTextColor, fontWeight: 500, whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: `${Math.max(baseFontSize - 1, 7)}px`, color: config.variantTextColor, fontWeight: 500, whiteSpace: "nowrap" }}>
                         {name}:
                       </span>
                     )}
@@ -341,60 +356,102 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
           );
         }
         case "quantity":
+          const quantityBorderRadius = Math.round(config.quantityBorderRadius * mobileScale);
           return (
             <div key={el.id} className={`shrink-0 ${isVertical ? "mx-auto" : ""}`}>
               {config.quantityStyle === "dropdown" ? (
-                <div 
-                  className="flex items-center gap-1 px-2 py-1.5 text-xs border"
-                  style={{ 
+                <div
+                  className="flex items-center border"
+                  style={{
+                    gap: `${isMobile ? 2 : 4}px`,
+                    padding: `${isMobile ? 3 : 6}px ${isMobile ? 6 : 8}px`,
+                    fontSize: `${baseFontSize}px`,
                     borderColor: config.quantityBorderColor,
-                    borderRadius: `${config.quantityBorderRadius}px`,
+                    borderRadius: `${quantityBorderRadius}px`,
                     backgroundColor: config.quantityBgColor || "#FFFFFF",
                     color: config.quantityTextColor || "#374151",
-                    minWidth: "50px",
+                    minWidth: isMobile ? "30px" : "40px",
                   }}
                 >
                   <span className="flex-1">1</span>
                   <span style={{ color: config.quantityButtonColor || "#9CA3AF" }}>
-                    <Icons.ChevronDown size={12} />
+                    <Icons.ChevronDown size={isMobile ? 8 : 12} />
                   </span>
                 </div>
               ) : config.quantityStyle === "input" ? (
-                <div 
+                <div
                   className="border overflow-hidden"
-                  style={{ 
+                  style={{
                     borderColor: config.quantityBorderColor,
-                    borderRadius: `${config.quantityBorderRadius}px`,
+                    borderRadius: `${quantityBorderRadius}px`,
                     backgroundColor: config.quantityBgColor || "#FFFFFF",
                   }}
                 >
-                  <span className="px-3 py-1 text-xs font-medium inline-block" style={{ minWidth: "40px", textAlign: "center", color: config.quantityTextColor || "#374151" }}>1</span>
+                  <span
+                    className="font-medium inline-block"
+                    style={{
+                      padding: `${isMobile ? 3 : 4}px ${isMobile ? 8 : 12}px`,
+                      fontSize: `${baseFontSize}px`,
+                      minWidth: isMobile ? "24px" : "30px",
+                      textAlign: "center",
+                      color: config.quantityTextColor || "#374151"
+                    }}
+                  >1</span>
                 </div>
               ) : (
-                <div 
+                <div
                   className="flex items-center border overflow-hidden"
-                  style={{ 
+                  style={{
                     borderColor: config.quantityBorderColor,
-                    borderRadius: `${config.quantityBorderRadius}px`,
+                    borderRadius: `${quantityBorderRadius}px`,
                     backgroundColor: config.quantityBgColor || "#FFFFFF",
                   }}
                 >
-                  <button className="px-2 py-1 text-xs" style={{ color: config.quantityButtonColor || "#9CA3AF", background: "none", border: "none" }}>−</button>
-                  <span className="px-3 py-1 text-xs font-medium" style={{ color: config.quantityTextColor || "#374151", borderLeft: `1px solid ${config.quantityBorderColor}`, borderRight: `1px solid ${config.quantityBorderColor}` }}>1</span>
-                  <button className="px-2 py-1 text-xs" style={{ color: config.quantityButtonColor || "#9CA3AF", background: "none", border: "none" }}>+</button>
+                  <button
+                    style={{
+                      padding: `${isMobile ? 2 : 4}px ${isMobile ? 6 : 8}px`,
+                      fontSize: `${baseFontSize}px`,
+                      color: config.quantityButtonColor || "#9CA3AF",
+                      background: "none",
+                      border: "none"
+                    }}
+                  >−</button>
+                  <span
+                    className="font-medium"
+                    style={{
+                      padding: `${isMobile ? 2 : 4}px ${isMobile ? 8 : 12}px`,
+                      fontSize: `${baseFontSize}px`,
+                      color: config.quantityTextColor || "#374151",
+                      borderLeft: `1px solid ${config.quantityBorderColor}`,
+                      borderRight: `1px solid ${config.quantityBorderColor}`
+                    }}
+                  >1</span>
+                  <button
+                    style={{
+                      padding: `${isMobile ? 2 : 4}px ${isMobile ? 6 : 8}px`,
+                      fontSize: `${baseFontSize}px`,
+                      color: config.quantityButtonColor || "#9CA3AF",
+                      background: "none",
+                      border: "none"
+                    }}
+                  >+</button>
                 </div>
               )}
             </div>
           );
         case "button":
+          const buttonText = config.buttonCustomText || "Add to Cart";
+          const iconSize = Math.round(15 * mobileScale);
           return (
             <button
               key={el.id}
-              className={`shrink-0 transition-all hover:opacity-90 flex items-center justify-center gap-2 ${isVertical ? "w-full" : ""}`}
-              style={getButtonStyle()}
+              className={`shrink-0 transition-all hover:opacity-90 flex items-center justify-center ${isVertical ? "w-full" : ""}`}
+              style={{ ...getButtonStyle(), gap: `${isMobile ? 4 : 8}px` }}
             >
-              {config.buttonShowIcon && <Icons.ShoppingCart size={isMobile ? 13 : 15} />}
-              <span>{config.buttonCustomText || "Add to Cart"}</span>
+              {config.buttonShowIcon && <Icons.ShoppingCart size={iconSize} />}
+              <span className="truncate" style={{ maxWidth: isMobile ? "80px" : "none" }}>
+                {isMobile && buttonText.length > 10 ? buttonText.substring(0, 10) + "..." : buttonText}
+              </span>
             </button>
           );
         default:
@@ -416,60 +473,60 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
     return (
       <div className={`${containerWidth} mx-auto h-full flex flex-col overflow-y-auto`}>
         {/* Simulated Product Page */}
-        <div className="relative bg-white rounded-xl border border-gray-200 overflow-hidden flex-1 min-h-[520px]"
+        <div className="relative bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden flex-1 min-h-[400px] sm:min-h-[520px]"
           style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-  
+
           {/* Fake browser bar */}
-          <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center gap-2">
-            <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-              <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-              <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+          <div className="bg-gray-50 border-b border-gray-200 px-2 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 sm:gap-2">
+            <div className="flex gap-1 sm:gap-1.5">
+              <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-400" />
+              <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-yellow-400" />
+              <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-400" />
             </div>
-            <div className="flex-1 mx-4">
-              <div className="bg-white rounded-md px-3 py-1 text-xs text-gray-400 border border-gray-200 text-center truncate">
+            <div className="flex-1 mx-2 sm:mx-4">
+              <div className="bg-white rounded-md px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs text-gray-400 border border-gray-200 text-center truncate">
                 yourstore.mybigcommerce.com/premium-wireless-headphones
               </div>
             </div>
           </div>
-  
+
           {/* Product page content */}
-          <div className="p-6 relative h-[calc(100%-40px)]">
+          <div className="p-3 sm:p-6 relative h-[calc(100%-36px)] sm:h-[calc(100%-40px)]">
             {/* Minimal product page mockup */}
-            <div className={`flex gap-6 ${isMobile ? "flex-col" : ""}`}>
+            <div className={`flex gap-3 sm:gap-6 ${isMobile ? "flex-col" : ""}`}>
               {/* Product Image */}
-              <div className={`${isMobile ? "w-full h-40" : "w-1/2 h-48"} bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center`}>
+              <div className={`${isMobile ? "w-full h-32 sm:h-40" : "w-1/2 h-40 sm:h-48"} bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg sm:rounded-xl flex items-center justify-center`}>
                 <div className="text-gray-300">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                  <svg width="32" height="32" className="sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
                     <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
                   </svg>
                 </div>
               </div>
               {/* Product Info */}
               <div className={`${isMobile ? "w-full" : "w-1/2"}`}>
-                <div className="h-3 w-24 bg-gray-200 rounded mb-3" />
-                <div className="h-5 w-full bg-gray-100 rounded mb-2" />
-                <div className="h-5 w-3/4 bg-gray-100 rounded mb-4" />
-                <div className="h-6 w-20 bg-gray-200 rounded mb-4" />
-                <div className="flex items-center gap-1 mb-4">
+                <div className="h-2.5 sm:h-3 w-20 sm:w-24 bg-gray-200 rounded mb-2 sm:mb-3" />
+                <div className="h-4 sm:h-5 w-full bg-gray-100 rounded mb-1.5 sm:mb-2" />
+                <div className="h-4 sm:h-5 w-3/4 bg-gray-100 rounded mb-3 sm:mb-4" />
+                <div className="h-5 sm:h-6 w-16 sm:w-20 bg-gray-200 rounded mb-3 sm:mb-4" />
+                <div className="flex items-center gap-0.5 sm:gap-1 mb-3 sm:mb-4">
                   {[1, 2, 3, 4, 5].map(i => (
-                    <div key={i} className={`w-3.5 h-3.5 rounded-sm ${i <= 4 ? "bg-yellow-300" : "bg-gray-200"}`} />
+                    <div key={i} className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-sm ${i <= 4 ? "bg-yellow-300" : "bg-gray-200"}`} />
                   ))}
-                  <div className="h-3 w-12 bg-gray-100 rounded ml-2" />
+                  <div className="h-2.5 sm:h-3 w-10 sm:w-12 bg-gray-100 rounded ml-1 sm:ml-2" />
                 </div>
-                <div className="space-y-2 mb-5">
-                  <div className="h-3 w-full bg-gray-100 rounded" />
-                  <div className="h-3 w-5/6 bg-gray-100 rounded" />
-                  <div className="h-3 w-4/6 bg-gray-100 rounded" />
+                <div className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-5">
+                  <div className="h-2.5 sm:h-3 w-full bg-gray-100 rounded" />
+                  <div className="h-2.5 sm:h-3 w-5/6 bg-gray-100 rounded" />
+                  <div className="h-2.5 sm:h-3 w-4/6 bg-gray-100 rounded" />
                 </div>
                 {!isMobile && (
                   <>
-                    <div className="flex gap-2 mb-4">
+                    <div className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                       {["S", "M", "L", "XL"].map((s) => (
-                        <div key={s} className="w-10 h-8 rounded border border-gray-200 bg-gray-50 flex items-center justify-center text-xs text-gray-400">{s}</div>
+                        <div key={s} className="w-8 h-7 sm:w-10 sm:h-8 rounded border border-gray-200 bg-gray-50 flex items-center justify-center text-xs text-gray-400">{s}</div>
                       ))}
                     </div>
-                    <div className="h-10 w-full bg-gray-800 rounded-lg flex items-center justify-center text-white text-sm font-medium opacity-40">
+                    <div className="h-9 sm:h-10 w-full bg-gray-800 rounded-lg flex items-center justify-center text-white text-xs sm:text-sm font-medium opacity-40">
                       Add to Cart
                     </div>
                   </>
@@ -480,34 +537,48 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
             {/* Sticky Bar */}
             {config.enabled && (
               <div
-                className={`absolute ${barPositionClasses[config.position as keyof typeof barPositionClasses]} z-10`}
+                className={`absolute ${barPositionClasses[config.position as keyof typeof barPositionClasses]} z-10 left-0 right-0 sm:left-auto sm:right-auto`}
                 style={{
-                  ...(isVertical ? { width: isMobile ? "60px" : "80px" } : {}),
-                  ...(config.barOffset > 0 && isHorizontal ? { 
-                    [config.position]: `${config.barOffset}px` 
+                  ...(isVertical ? { width: `${Math.round((isMobile ? 60 : 80) * mobileScale)}px` } : {}),
+                  ...(config.barOffset > 0 && isHorizontal ? {
+                    [config.position]: `${Math.round(config.barOffset * mobileScale)}px`
                   } : {}),
                 }}
               >
-                <div style={barContainerStyle}>
+                <div style={barContainerStyle} className="mx-1 sm:mx-0">
                   {/* Bar background shell */}
                   <div className="relative" style={barStyle}>
                     {/* Inner content container */}
                     <div
+                      className={isMobile ? "flex-wrap" : "flex-wrap sm:flex-nowrap"}
                       style={{
                         ...contentStyle,
                         gap: isHorizontal && leftElements.length > 0 && rightElements.length > 0
-                          ? `${config.groupGap ?? 32}px`
-                          : `${config.elementGap || 12}px`,
+                          ? `${Math.round((config.groupGap ?? 32) * mobileScale)}px`
+                          : `${Math.round((config.elementGap || 12) * mobileScale)}px`,
                       }}
                     >
                       {isHorizontal && leftElements.length > 0 && rightElements.length > 0 ? (
                         <>
                           {/* Left group: image, title, price */}
-                          <div className="flex items-center" style={{ gap: `${config.elementGap || 12}px`, minWidth: 0 }}>
+                          <div
+                            className={`flex items-center ${isMobile ? "flex-wrap" : "flex-wrap sm:flex-nowrap"}`}
+                            style={{
+                              gap: `${Math.round((config.elementGap || 12) * mobileScale)}px`,
+                              minWidth: 0,
+                              alignContent: isMobile ? "flex-start" : undefined,
+                            }}
+                          >
                             {leftElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
                           </div>
                           {/* Right group: variants, quantity, button */}
-                          <div className="flex items-center shrink-0" style={{ gap: `${config.elementGap || 12}px` }}>
+                          <div
+                            className={`flex items-center shrink-0 ${isMobile ? "flex-wrap" : "flex-wrap sm:flex-nowrap"}`}
+                            style={{
+                              gap: `${Math.round((config.elementGap || 12) * mobileScale)}px`,
+                              alignContent: isMobile ? "flex-start" : undefined,
+                            }}
+                          >
                             {rightElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
                           </div>
                         </>
@@ -515,14 +586,14 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                         visibleElements.map((el: { id: string, visible: boolean }) => renderElement(el))
                       )}
                     </div>
-                    
+
                     {/* Close Button */}
                     {config.showCloseButton && (
-                      <div 
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-gray-200/80 flex items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-300/80 transition-colors"
-                        style={{ fontSize: "10px" }}
+                      <div
+                        className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gray-200/80 flex items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-300/80 transition-colors"
+                        style={{ fontSize: "9px" }}
                       >
-                        <Icons.X size={10} />
+                        <Icons.X size={9} />
                       </div>
                     )}
                   </div>
@@ -533,9 +604,9 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
         </div>
   
         {/* Preview Status */}
-        <div className="flex items-center justify-center gap-2 mt-3">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mt-3 px-2">
           <div className={`w-2 h-2 rounded-full ${config.enabled ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
-          <span className="text-xs text-gray-500">
+          <span className="text-[10px] sm:text-xs text-gray-500 text-center">
             {config.enabled ? "Sticky bar active" : "Sticky bar disabled"} · {config.position} position · {config.triggerMode === "scroll" ? "Shows on scroll" : config.triggerMode === "always" ? "Always visible" : `Shows after ${config.triggerDelay}s`}
             {config.showCloseButton && " · Dismissible"}
           </span>

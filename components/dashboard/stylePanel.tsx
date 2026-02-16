@@ -56,7 +56,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
 
             <div className="border-t border-gray-100 pt-4" />
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <RangeSlider label="Border Radius" value={config.barBorderRadius} onChange={(v) => updateConfig("barBorderRadius", v)} max={30} />
               <RangeSlider label="Padding" value={config.barPadding} onChange={(v) => updateConfig("barPadding", v)} min={4} max={32} />
             </div>
@@ -76,7 +76,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
 
             {/* Border */}
             <div className="border-t border-gray-100 pt-4" />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <RangeSlider label="Border Width" value={config.barBorderWidth} onChange={(v) => updateConfig("barBorderWidth", v)} max={5} />
               <RangeSlider label="Opacity" value={config.barOpacity} onChange={(v) => updateConfig("barOpacity", v)} min={20} max={100} suffix="%" />
             </div>
@@ -89,7 +89,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
         {/* ─── Typography & Colors ───────────────────────────── */}
         <SectionCard title="Typography & Colors" icon={<Icons.Type size={16} />}>
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ColorPicker label="Title Color" value={config.titleColor} onChange={(v) => updateConfig("titleColor", v)} />
               <SelectField
                 label="Title Weight"
@@ -106,7 +106,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ColorPicker label="Price Color" value={config.priceColor} onChange={(v) => updateConfig("priceColor", v)} />
               <SelectField
                 label="Price Weight"
@@ -122,7 +122,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ColorPicker label="Compare Price" value={config.discountedPriceColor} onChange={(v) => updateConfig("discountedPriceColor", v)} />
               <SelectField
                 label="Compare Style"
@@ -157,7 +157,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
               ]}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <SelectField
                 label="Font Size"
                 value={config.fontSize}
@@ -204,7 +204,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
               ]}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ColorPicker label="Background" value={config.buttonBgColor} onChange={(v) => updateConfig("buttonBgColor", v)} />
               <ColorPicker label="Hover Background" value={config.buttonHoverBgColor} onChange={(v) => updateConfig("buttonHoverBgColor", v)} />
             </div>
@@ -212,7 +212,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
             <ColorPicker label="Text Color" value={config.buttonTextColor} onChange={(v) => updateConfig("buttonTextColor", v)} />
 
             {(config.buttonStyle === "outline" || config.buttonStyle === "ghost") && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <ColorPicker label="Border Color" value={config.buttonBorderColor} onChange={(v) => updateConfig("buttonBorderColor", v)} />
                 <RangeSlider label="Border Width" value={config.buttonBorderWidth} onChange={(v) => updateConfig("buttonBorderWidth", v)} max={5} />
               </div>
@@ -222,7 +222,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
 
             <RangeSlider label="Border Radius" value={config.buttonBorderRadius} onChange={(v) => updateConfig("buttonBorderRadius", v)} max={30} />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <RangeSlider label="Padding X" value={config.buttonPaddingX} onChange={(v) => updateConfig("buttonPaddingX", v)} min={8} max={48} />
               <RangeSlider label="Padding Y" value={config.buttonPaddingY} onChange={(v) => updateConfig("buttonPaddingY", v)} min={4} max={24} />
             </div>

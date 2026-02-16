@@ -175,19 +175,19 @@ export default function StickyBarDashboard() {
       <div className="min-h-screen bg-[#F8F9FA] overflow-y-auto">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
-          <div className="max-w-[1440px] mx-auto px-6">
-            <div className="flex items-center justify-between h-16">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 py-3 sm:h-16">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-slate-900 flex items-center justify-center text-white">
+                <div className="w-9 h-9 rounded-lg bg-slate-900 flex items-center justify-center text-white shrink-0">
                   <Icons.ShoppingCart size={18} />
                 </div>
                 <div>
                   <h1 className="text-base font-semibold text-slate-900 tracking-tight">Sticky Add to Cart</h1>
-                  <p className="text-xs text-slate-500 -mt-0.5">Configure your sticky bar settings</p>
+                  <p className="text-xs text-slate-500 -mt-0.5 hidden sm:block">Configure your sticky bar settings</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${config?.enabled ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <div className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${config?.enabled ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${config?.enabled ? "bg-emerald-500" : "bg-slate-400"}`} />
                   {config?.enabled ? "Active" : "Inactive"}
                 </div>
@@ -195,7 +195,7 @@ export default function StickyBarDashboard() {
                   onClick={handleSave}
                   disabled={!hasChanges || saving}
                   className={`
-                    flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all
+                    flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all flex-1 sm:flex-initial justify-center
                     ${hasChanges
                       ? "bg-slate-900 text-white hover:bg-slate-800"
                       : "bg-slate-100 text-slate-400 cursor-not-allowed"
@@ -203,7 +203,8 @@ export default function StickyBarDashboard() {
                   `}
                 >
                   <Icons.Save size={15} />
-                  {saving ? "Saving..." : "Save Changes"}
+                  <span className="hidden sm:inline">{saving ? "Saving..." : "Save Changes"}</span>
+                  <span className="sm:hidden">{saving ? "Saving..." : "Save"}</span>
                 </button>
               </div>
             </div>
@@ -211,10 +212,10 @@ export default function StickyBarDashboard() {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-[1440px] mx-auto px-6 py-6">
-          <div className="flex gap-6" style={{ minHeight: "calc(100vh - 120px)" }}>
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6" style={{ minHeight: "calc(100vh - 120px)" }}>
             {/* Left: Config Panel */}
-            <div className="w-[400px] shrink-0 flex flex-col gap-4">
+            <div className="w-full lg:w-[400px] lg:shrink-0 flex flex-col gap-4">
               {/* Tab Navigation */}
               <div className="flex gap-1 p-1 bg-white rounded-lg border border-gray-200">
                 {tabs.map((tab) => (
@@ -229,7 +230,7 @@ export default function StickyBarDashboard() {
               </div>
 
               {/* Tab Content */}
-              <div className="flex-1 overflow-y-auto pr-1 pb-20" style={{ maxHeight: "calc(100vh - 200px)" }}>
+              <div className="flex-1 overflow-y-auto pr-1 pb-20 lg:pb-20" style={{ maxHeight: "calc(100vh - 200px)" }}>
                 <div className="animate-[fadeIn_0.3s_ease-out]">
                   {config && activeTab === "style" && <StylePanel config={config} updateConfig={updateConfig} />}
                   {config && activeTab === "layout" && <LayoutPanel config={config} updateConfig={updateConfig} />}
@@ -241,7 +242,7 @@ export default function StickyBarDashboard() {
             {/* Right: Live Preview */}
             <div className="flex-1 flex flex-col gap-4 min-w-0 overflow-y-auto">
               {/* Preview Toolbar */}
-              <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 px-4 py-2.5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 bg-white rounded-lg border border-gray-200 px-4 py-3 sm:py-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="text-slate-600">
                     <Icons.Eye size={16} />
@@ -253,16 +254,16 @@ export default function StickyBarDashboard() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg">
+                <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg w-full sm:w-auto">
                   <button
                     onClick={() => setPreviewDevice("desktop")}
-                    className={`p-2 rounded-md transition-all ${previewDevice === "desktop" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900 hover:bg-slate-200"}`}
+                    className={`flex-1 sm:flex-initial p-2 rounded-md transition-all flex items-center justify-center ${previewDevice === "desktop" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900 hover:bg-slate-200"}`}
                   >
                     <Icons.Monitor size={16} />
                   </button>
                   <button
                     onClick={() => setPreviewDevice("mobile")}
-                    className={`p-2 rounded-md transition-all ${previewDevice === "mobile" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900 hover:bg-slate-200"}`}
+                    className={`flex-1 sm:flex-initial p-2 rounded-md transition-all flex items-center justify-center ${previewDevice === "mobile" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900 hover:bg-slate-200"}`}
                   >
                     <Icons.Smartphone size={16} />
                   </button>
@@ -270,7 +271,7 @@ export default function StickyBarDashboard() {
               </div>
 
               {/* Preview Area */}
-              <div className="flex-1 bg-white rounded-lg border border-gray-200 p-6 overflow-hidden"
+              <div className="flex-1 bg-white rounded-lg border border-gray-200 p-4 sm:p-6 overflow-hidden min-h-[300px]"
                 style={{
                   backgroundImage: "radial-gradient(circle at 1px 1px, #E2E8F0 1px, transparent 0)",
                   backgroundSize: "20px 20px",

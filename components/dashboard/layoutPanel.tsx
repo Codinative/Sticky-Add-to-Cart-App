@@ -42,13 +42,13 @@ export function LayoutPanel({ config, updateConfig }: { config: any, updateConfi
                   <button
                     key={option.value}
                     onClick={() => updateConfig("barWidthMode", option.value)}
-                    className={`flex flex-col items-center gap-1 px-3 py-3 rounded-lg border-2 transition-all text-center ${
+                    className={`flex flex-col items-center gap-1 px-2 sm:px-3 py-2.5 sm:py-3 rounded-lg border-2 transition-all text-center ${
                       config.barWidthMode === option.value
                         ? "border-slate-900 bg-slate-50 shadow-sm"
                         : "border-gray-200 bg-white hover:border-gray-300"
                     }`}
                   >
-                    <span className={`text-sm font-medium ${config.barWidthMode === option.value ? "text-slate-900" : "text-gray-600"}`}>
+                    <span className={`text-xs sm:text-sm font-medium ${config.barWidthMode === option.value ? "text-slate-900" : "text-gray-600"}`}>
                       {option.label}
                     </span>
                     <span className="text-[10px] text-gray-400">{option.desc}</span>
@@ -112,7 +112,7 @@ export function LayoutPanel({ config, updateConfig }: { config: any, updateConfi
         {/* ─── Spacing ──────────────────────────────────────── */}
         <SectionCard title="Spacing" icon={<Icons.Columns size={16} />} defaultOpen={false}>
           <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <NumberInput label="Element Gap" value={config.elementGap} onChange={(v) => updateConfig("elementGap", v)} max={40} />
               <NumberInput label="Bar Offset" value={config.barOffset} onChange={(v) => updateConfig("barOffset", v)} max={50} />
             </div>
