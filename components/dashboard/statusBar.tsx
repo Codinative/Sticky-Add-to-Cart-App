@@ -9,15 +9,15 @@ export function StatusBar({ hasChanges, onSave, onReset, saving }: { hasChanges:
         `}
       >
         <div className="bg-gray-900 border-t border-gray-700 shadow-2xl">
-          <div className="max-w-[1440px] mx-auto px-6 py-3.5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0">
+            <div className="flex items-center gap-2 sm:gap-3 justify-center sm:justify-start">
               <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              <span className="text-sm text-gray-300">You have unsaved changes</span>
+              <span className="text-xs sm:text-sm text-gray-300">You have unsaved changes</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={onReset}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
               >
                 <Icons.Undo size={15} />
                 <span>Discard</span>
@@ -25,17 +25,19 @@ export function StatusBar({ hasChanges, onSave, onReset, saving }: { hasChanges:
               <button
                 onClick={onSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-70"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 sm:px-5 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-70"
               >
                 {saving ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Saving...</span>
+                    <span className="hidden sm:inline">Saving...</span>
+                    <span className="sm:hidden">Saving...</span>
                   </>
                 ) : (
                   <>
                     <Icons.Save size={15} />
-                    <span>Save Changes</span>
+                    <span className="hidden sm:inline">Save Changes</span>
+                    <span className="sm:hidden">Save</span>
                   </>
                 )}
               </button>
