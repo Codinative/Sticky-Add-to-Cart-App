@@ -262,7 +262,7 @@ export default function StickyBarDashboardSkeleton() {
               </div>
 
               {/* Config Sections */}
-              <div className="flex-1 overflow-y-auto pr-1 pb-20 space-y-4 skeleton-stagger" style={{ maxHeight: "calc(100vh - 200px)" }}>
+              <div className="flex-1 overflow-y-auto pr-1 pb-7 space-y-4 skeleton-stagger" style={{ maxHeight: "calc(100vh - 200px)" }}>
                 {/* Bar Appearance */}
                 <SkeletonSectionCard rows={3} />
 

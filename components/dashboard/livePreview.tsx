@@ -81,10 +81,10 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
       maxWidth: config.contentMaxWidth > 0 ? `${config.contentMaxWidth}px` : "none",
       margin: "0 auto",
       display: "flex",
+      width: "100%",
       flexDirection: isHorizontal ? "row" : "column",
-      justifyContent: isHorizontal ? (alignmentMap[config.contentAlignment] || "space-between") : undefined,
-      alignItems: isHorizontal ? (isMobile ? "flex-start" : (verticalAlignMap[config.verticalAlignment] || "center")) : "center",
-      alignContent: isMobile && isHorizontal ? "flex-start" : undefined,
+      justifyContent: isHorizontal ? (isMobile ? "center" : (alignmentMap[config.contentAlignment] || "space-between")) : undefined,
+      alignItems: isHorizontal ? (verticalAlignMap[config.verticalAlignment] || "center") : "center",
       rowGap: isMobile && isHorizontal ? `${Math.round((config.elementGap || 12) * mobileScale)}px` : undefined,
     };
 
@@ -473,7 +473,7 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
     return (
       <div className={`${containerWidth} mx-auto h-full flex flex-col overflow-y-auto`}>
         {/* Simulated Product Page */}
-        <div className="relative bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden flex-1 min-h-[400px] sm:min-h-[520px]"
+        <div className="relative bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden flex-1 min-h-[520px] sm:min-h-[520px] flex flex-col"
           style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
 
           {/* Fake browser bar */}
@@ -483,7 +483,7 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
               <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-yellow-400" />
               <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-green-400" />
             </div>
-            <div className="flex-1 mx-2 sm:mx-4">
+            <div className="flex-1 min-w-0 mx-2 sm:mx-4">
               <div className="bg-white rounded-md px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs text-gray-400 border border-gray-200 text-center truncate">
                 yourstore.mybigcommerce.com/premium-wireless-headphones
               </div>
@@ -491,7 +491,7 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
           </div>
 
           {/* Product page content */}
-          <div className="p-3 sm:p-6 relative h-[calc(100%-36px)] sm:h-[calc(100%-40px)]">
+          <div className="pt-3 px-3 sm:pt-6 sm:px-6 relative flex-1">
             {/* Minimal product page mockup */}
             <div className={`flex gap-3 sm:gap-6 ${isMobile ? "flex-col" : ""}`}>
               {/* Product Image */}
@@ -537,7 +537,7 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
             {/* Sticky Bar */}
             {config.enabled && (
               <div
-                className={`absolute ${barPositionClasses[config.position as keyof typeof barPositionClasses]} z-10 left-0 right-0 sm:left-auto sm:right-auto`}
+                className={`absolute ${barPositionClasses[config.position as keyof typeof barPositionClasses]} z-10 left-0 right-0`}
                 style={{
                   ...(isVertical ? { width: `${Math.round((isMobile ? 60 : 80) * mobileScale)}px` } : {}),
                   ...(config.barOffset > 0 && isHorizontal ? {
@@ -545,12 +545,12 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                   } : {}),
                 }}
               >
-                <div style={barContainerStyle} className="mx-1 sm:mx-0">
+                <div style={barContainerStyle} className={isMobile ? "mx-1" : "mx-1 sm:mx-0"}>
                   {/* Bar background shell */}
                   <div className="relative" style={barStyle}>
                     {/* Inner content container */}
                     <div
-                      className={isMobile ? "flex-wrap" : "flex-wrap sm:flex-nowrap"}
+                      className={"flex-wrap"}
                       style={{
                         ...contentStyle,
                         gap: isHorizontal && leftElements.length > 0 && rightElements.length > 0
@@ -562,21 +562,19 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                         <>
                           {/* Left group: image, title, price */}
                           <div
-                            className={`flex items-center ${isMobile ? "flex-wrap" : "flex-wrap sm:flex-nowrap"}`}
+                            className={`flex items-center justify-center ${"flex-wrap"}`}
                             style={{
                               gap: `${Math.round((config.elementGap || 12) * mobileScale)}px`,
                               minWidth: 0,
-                              alignContent: isMobile ? "flex-start" : undefined,
                             }}
                           >
                             {leftElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
                           </div>
                           {/* Right group: variants, quantity, button */}
                           <div
-                            className={`flex items-center shrink-0 ${isMobile ? "flex-wrap" : "flex-wrap sm:flex-nowrap"}`}
+                            className={`flex items-center justify-center ${"flex-wrap"}`}
                             style={{
                               gap: `${Math.round((config.elementGap || 12) * mobileScale)}px`,
-                              alignContent: isMobile ? "flex-start" : undefined,
                             }}
                           >
                             {rightElements.map((el: { id: string, visible: boolean }) => renderElement(el))}

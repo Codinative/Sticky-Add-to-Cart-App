@@ -1,8 +1,6 @@
 export default function PositionSelector({ value, onChange }: { value: "top" | "left" | "right" | "bottom", onChange: (value: "top" | "left" | "right" | "bottom") => void }) {
     const positions = [
       { id: "top", label: "Top", row: 0, col: 1 },
-      { id: "left", label: "Left", row: 1, col: 0 },
-      { id: "right", label: "Right", row: 1, col: 2 },
       { id: "bottom", label: "Bottom", row: 2, col: 1 },
     ];
     return (
