@@ -470,14 +470,59 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
       ? `flex-row gap-${isMobile ? 2 : 3}`
       : `flex-col items-center gap-3 py-2`;
 
+    const stickyBarContent = config.enabled ? (
+      <div className="shrink-0">
+        <div style={barContainerStyle} className={isMobile ? "mx-1" : "mx-1 sm:mx-0"}>
+          <div className="relative" style={barStyle}>
+            <div
+              className={"flex-wrap"}
+              style={{
+                ...contentStyle,
+                gap: isHorizontal && leftElements.length > 0 && rightElements.length > 0
+                  ? `${Math.round((config.groupGap ?? 32) * mobileScale)}px`
+                  : `${Math.round((config.elementGap || 12) * mobileScale)}px`,
+              }}
+            >
+              {isHorizontal && leftElements.length > 0 && rightElements.length > 0 ? (
+                <>
+                  <div
+                    className={`flex items-center justify-center ${"flex-wrap"}`}
+                    style={{ gap: `${Math.round((config.elementGap || 12) * mobileScale)}px`, minWidth: 0 }}
+                  >
+                    {leftElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
+                  </div>
+                  <div
+                    className={`flex items-center justify-center ${"flex-wrap"}`}
+                    style={{ gap: `${Math.round((config.elementGap || 12) * mobileScale)}px` }}
+                  >
+                    {rightElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
+                  </div>
+                </>
+              ) : (
+                visibleElements.map((el: { id: string, visible: boolean }) => renderElement(el))
+              )}
+            </div>
+            {config.showCloseButton && (
+              <div
+                className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gray-200/80 flex items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-300/80 transition-colors"
+                style={{ fontSize: "9px" }}
+              >
+                <Icons.X size={9} />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ) : null;
+
     return (
       <div className={`${containerWidth} mx-auto h-full flex flex-col overflow-y-auto`}>
         {/* Simulated Product Page */}
-        <div className="relative bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden flex-1 min-h-[520px] sm:min-h-[520px] flex flex-col"
+        <div className="relative bg-white rounded-lg sm:rounded-xl border border-gray-200 flex-1 min-h-[520px] sm:min-h-[520px] flex flex-col"
           style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
 
           {/* Fake browser bar */}
-          <div className="bg-gray-50 border-b border-gray-200 px-2 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 sm:gap-2">
+          <div className="bg-gray-50 border-b border-gray-200 px-2 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1 sm:gap-2 shrink-0">
             <div className="flex gap-1 sm:gap-1.5">
               <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-400" />
               <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-yellow-400" />
@@ -490,8 +535,11 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
             </div>
           </div>
 
+          {/* Sticky Bar - TOP (in-flow) */}
+          {config.position === "top" && stickyBarContent}
+
           {/* Product page content */}
-          <div className="pt-3 px-3 sm:pt-6 sm:px-6 relative flex-1">
+          <div className="pt-3 px-3 sm:pt-6 sm:px-6 flex-1">
             {/* Minimal product page mockup */}
             <div className={`flex gap-3 sm:gap-6 ${isMobile ? "flex-col" : ""}`}>
               {/* Product Image */}
@@ -533,72 +581,10 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                 )}
               </div>
             </div>
-  
-            {/* Sticky Bar */}
-            {config.enabled && (
-              <div
-                className={`absolute ${barPositionClasses[config.position as keyof typeof barPositionClasses]} z-10 left-0 right-0`}
-                style={{
-                  ...(isVertical ? { width: `${Math.round((isMobile ? 60 : 80) * mobileScale)}px` } : {}),
-                  ...(config.barOffset > 0 && isHorizontal ? {
-                    [config.position]: `${Math.round(config.barOffset * mobileScale)}px`
-                  } : {}),
-                }}
-              >
-                <div style={barContainerStyle} className={isMobile ? "mx-1" : "mx-1 sm:mx-0"}>
-                  {/* Bar background shell */}
-                  <div className="relative" style={barStyle}>
-                    {/* Inner content container */}
-                    <div
-                      className={"flex-wrap"}
-                      style={{
-                        ...contentStyle,
-                        gap: isHorizontal && leftElements.length > 0 && rightElements.length > 0
-                          ? `${Math.round((config.groupGap ?? 32) * mobileScale)}px`
-                          : `${Math.round((config.elementGap || 12) * mobileScale)}px`,
-                      }}
-                    >
-                      {isHorizontal && leftElements.length > 0 && rightElements.length > 0 ? (
-                        <>
-                          {/* Left group: image, title, price */}
-                          <div
-                            className={`flex items-center justify-center ${"flex-wrap"}`}
-                            style={{
-                              gap: `${Math.round((config.elementGap || 12) * mobileScale)}px`,
-                              minWidth: 0,
-                            }}
-                          >
-                            {leftElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
-                          </div>
-                          {/* Right group: variants, quantity, button */}
-                          <div
-                            className={`flex items-center justify-center ${"flex-wrap"}`}
-                            style={{
-                              gap: `${Math.round((config.elementGap || 12) * mobileScale)}px`,
-                            }}
-                          >
-                            {rightElements.map((el: { id: string, visible: boolean }) => renderElement(el))}
-                          </div>
-                        </>
-                      ) : (
-                        visibleElements.map((el: { id: string, visible: boolean }) => renderElement(el))
-                      )}
-                    </div>
-
-                    {/* Close Button */}
-                    {config.showCloseButton && (
-                      <div
-                        className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gray-200/80 flex items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-300/80 transition-colors"
-                        style={{ fontSize: "9px" }}
-                      >
-                        <Icons.X size={9} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Sticky Bar - BOTTOM (in-flow) */}
+          {config.position === "bottom" && stickyBarContent}
         </div>
   
         {/* Preview Status */}

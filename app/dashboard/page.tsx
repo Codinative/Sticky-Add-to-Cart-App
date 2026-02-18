@@ -215,11 +215,11 @@ export default function StickyBarDashboard() {
 
         {/* Main Content */}
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:min-h-[calc(100vh-120px)]">
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:h-[calc(100vh-128px)]">
             {/* Left: Config Panel */}
-            <div className="w-full lg:w-[400px] lg:shrink-0 flex flex-col gap-4">
+            <div className="w-full lg:w-[400px] lg:shrink-0 flex flex-col gap-4 lg:h-full">
               {/* Tab Navigation */}
-              <div className="flex gap-1 p-1 bg-white rounded-lg border border-gray-200">
+              <div className="flex gap-1 p-1 bg-white rounded-lg border border-gray-200 shrink-0">
                 {tabs.map((tab) => (
                   <TabButton
                     key={tab.id}
@@ -232,7 +232,7 @@ export default function StickyBarDashboard() {
               </div>
 
               {/* Tab Content */}
-              <div className="flex-1 overflow-y-auto pr-1 pb-7 sm:pb-0 lg:max-h-[calc(100vh-200px)]">
+              <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-7 sm:pb-0">
                 <div className="animate-[fadeIn_0.3s_ease-out]">
                   {config && activeTab === "style" && <StylePanel config={config} updateConfig={updateConfig} />}
                   {config && activeTab === "layout" && <LayoutPanel config={config} updateConfig={updateConfig} />}
@@ -242,9 +242,9 @@ export default function StickyBarDashboard() {
             </div>
 
             {/* Right: Live Preview */}
-            <div className="flex-1 flex flex-col gap-4 min-w-0 lg:overflow-y-auto">
+            <div className="flex-1 flex flex-col gap-4 min-w-0 min-h-0 lg:h-full">
               {/* Preview Toolbar */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 bg-white rounded-lg border border-gray-200 px-4 py-3 sm:py-2.5">
+              <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 bg-white rounded-lg border border-gray-200 px-4 py-3 sm:py-2.5">
                 <div className="flex items-center gap-2.5">
                   <span className="text-slate-600">
                     <Icons.Eye size={16} />
