@@ -55,7 +55,7 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
       </div>`;
 
   const content = isMobile
-    ? `<div style="padding-bottom:120px;">
+    ? `<div style="padding-bottom:200px;">
         <div style="aspect-ratio:1/1;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);display:flex;align-items:center;justify-content:center;">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </div>
@@ -105,38 +105,38 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
           </div>
         </div>
       </div>`
-    : `<div style="max-width:1200px;margin:0 auto;padding:32px 48px 140px;">
-        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#9ca3af;margin-bottom:24px;">
+    : `<div class="page-wrap">
+        <div class="breadcrumb">
           <span>Home</span><span>/</span><span>Headphones</span><span>/</span>
           <span style="color:#374151;">Premium Wireless Headphones</span>
         </div>
-        <div style="display:flex;gap:48px;align-items:flex-start;">
-          <div style="width:50%;flex-shrink:0;">
+        <div class="prod-layout">
+          <div class="prod-img-col">
             <div style="background:linear-gradient(135deg,#f3f4f6,#e5e7eb);border-radius:16px;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
               <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             </div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <div style="width:64px;height:64px;border-radius:8px;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);border:2px solid #111827;"></div>
               <div style="width:64px;height:64px;border-radius:8px;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);border:2px solid transparent;"></div>
               <div style="width:64px;height:64px;border-radius:8px;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);border:2px solid transparent;"></div>
               <div style="width:64px;height:64px;border-radius:8px;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);border:2px solid transparent;"></div>
             </div>
           </div>
-          <div style="flex:1;min-width:0;">
+          <div class="prod-info-col">
             <p style="font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Sony</p>
-            <h1 style="font-size:26px;font-weight:700;color:#111827;margin-bottom:10px;line-height:1.3;">Premium Wireless Headphones</h1>
+            <h1 style="font-size:clamp(18px,3vw,26px);font-weight:700;color:#111827;margin-bottom:10px;line-height:1.3;">Premium Wireless Headphones</h1>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
               <span style="color:#FBBF24;font-size:16px;">★★★★</span><span style="color:#e5e7eb;font-size:16px;">★</span>
               <span style="font-size:13px;color:#6b7280;">(128 reviews)</span>
             </div>
-            <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px;">
-              <span style="font-size:32px;font-weight:700;color:#111;">$299.99</span>
-              <span style="font-size:18px;color:#9ca3af;text-decoration:line-through;">$399.99</span>
+            <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+              <span style="font-size:clamp(22px,4vw,32px);font-weight:700;color:#111;">$299.99</span>
+              <span style="font-size:clamp(14px,2vw,18px);color:#9ca3af;text-decoration:line-through;">$399.99</span>
               <span style="background:#FEF2F2;color:#DC2626;font-size:12px;font-weight:600;padding:2px 8px;border-radius:20px;">-25%</span>
             </div>
             <div style="margin-bottom:18px;">
               <p style="font-size:13px;font-weight:500;color:#374151;margin-bottom:8px;">Color: <span style="font-weight:400;color:#6b7280;">Midnight Black</span></p>
-              <div style="display:flex;gap:8px;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <div style="width:30px;height:30px;border-radius:50%;background:#1F2937;border:2px solid #111827;box-shadow:0 0 0 2px white inset;cursor:pointer;"></div>
                 <div style="width:30px;height:30px;border-radius:50%;background:white;border:2px solid #e5e7eb;cursor:pointer;"></div>
                 <div style="width:30px;height:30px;border-radius:50%;background:#1E3A5F;border:2px solid transparent;cursor:pointer;"></div>
@@ -144,7 +144,7 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
             </div>
             <div style="margin-bottom:22px;">
               <p style="font-size:13px;font-weight:500;color:#374151;margin-bottom:8px;">Size</p>
-              <div style="display:flex;gap:8px;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <div style="padding:8px 16px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;cursor:pointer;">S</div>
                 <div style="padding:8px 16px;border:2px solid #111;border-radius:8px;font-size:13px;background:#111;color:white;cursor:pointer;">M</div>
                 <div style="padding:8px 16px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;cursor:pointer;">L</div>
@@ -156,13 +156,13 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
               <div>✓ 30-day easy returns</div>
               <div>✓ 2-year warranty</div>
             </div>
-            <div style="display:flex;gap:12px;align-items:center;">
-              <button style="flex:1;background:#111827;color:white;border:none;border-radius:12px;padding:14px 24px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;">Add to Cart</button>
-              <button style="width:50px;height:50px;border:1px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-family:inherit;">♡</button>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+              <button style="flex:1;min-width:140px;background:#111827;color:white;border:none;border-radius:12px;padding:14px 24px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;">Add to Cart</button>
+              <button style="width:50px;height:50px;flex-shrink:0;border:1px solid #e5e7eb;border-radius:12px;background:white;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-family:inherit;">♡</button>
             </div>
           </div>
         </div>
-        <div style="margin-top:48px;border-top:1px solid #f3f4f6;padding-top:32px;">
+        <div class="desc-section">
           <h2 style="font-size:18px;font-weight:600;color:#111827;margin-bottom:16px;">Product Description</h2>
           <div style="display:flex;flex-direction:column;gap:8px;max-width:600px;">
             <div style="height:12px;background:#f3f4f6;border-radius:4px;width:100%;"></div>
@@ -183,6 +183,26 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
     html, body { height: 100%; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; flex-direction: column; overflow: hidden; background: white; }
     .scroll-area { flex: 1; overflow-y: auto; }
+
+    /* Desktop product page responsive layout */
+    .page-wrap { max-width: 1200px; margin: 0 auto; padding: 32px 48px 140px; }
+    .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9ca3af; margin-bottom: 24px; }
+    .prod-layout { display: flex; gap: 48px; align-items: flex-start; }
+    .prod-img-col { width: 50%; flex-shrink: 0; }
+    .prod-info-col { flex: 1; min-width: 0; }
+    .desc-section { margin-top: 48px; border-top: 1px solid #f3f4f6; padding-top: 32px; }
+    @media (max-width: 720px) {
+      .page-wrap { padding: 16px 16px 120px; }
+      .breadcrumb { display: none; }
+      .prod-layout { flex-direction: column; gap: 20px; }
+      .prod-img-col { width: 100%; }
+      .desc-section { margin-top: 28px; padding-top: 20px; }
+    }
+    @media (min-width: 721px) and (max-width: 960px) {
+      .page-wrap { padding: 24px 28px 140px; }
+      .prod-layout { gap: 28px; }
+      .prod-img-col { width: 45%; }
+    }
   </style>
   <script>
     var __cfg = ${configJSON};
@@ -254,14 +274,14 @@ export default function PreviewPage() {
     <div className="min-h-screen flex flex-col bg-[#F8F9FA]" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* Toolbar */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-50 shrink-0" style={{ height: "53px" }}>
-        <div className="flex items-center gap-3">
+      <div className="bg-white border-b border-gray-200 px-3 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-50 shrink-0" style={{ height: "53px" }}>
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white shrink-0">
             <Icons.Eye size={15} />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-900">Full Page Preview</span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">Preview Mode</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-semibold text-slate-900 truncate hidden xs:inline sm:inline">Full Page Preview</span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 shrink-0 hidden sm:inline">Preview Mode</span>
           </div>
         </div>
 
@@ -294,16 +314,18 @@ export default function PreviewPage() {
 
       {/* Preview area */}
       {isMobile ? (
-        <div className="flex-1 flex flex-col items-center justify-start p-6 overflow-y-auto">
-          <div className="bg-slate-900 rounded-[44px] p-3 shadow-2xl">
-            <div className="rounded-[36px] overflow-hidden" style={{ width: "390px", height: "760px" }}>
-              <iframe
-                srcDoc={srcdoc}
-                style={{ width: "100%", height: "100%", border: "none", display: "block" }}
-              />
+        <div className="flex-1 overflow-auto">
+          <div className="flex flex-col items-center justify-start p-4 sm:p-6 min-w-max">
+            <div className="bg-slate-900 rounded-[44px] p-3 shadow-2xl">
+              <div className="rounded-[36px] overflow-hidden" style={{ width: "390px", height: "760px" }}>
+                <iframe
+                  srcDoc={srcdoc}
+                  style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+                />
+              </div>
             </div>
+            <p className="text-center text-xs text-gray-400 mt-3">iPhone 14 Pro · 390×844</p>
           </div>
-          <p className="text-center text-xs text-gray-400 mt-3">iPhone 14 Pro · 390×844</p>
         </div>
       ) : (
         <iframe

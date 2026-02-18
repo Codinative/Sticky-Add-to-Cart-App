@@ -53,6 +53,9 @@
   var quantity = 1;
   var barVisible = false;
   var barDismissed = false;
+  var hideBarTimer = null; // tracks pending visibility:hidden timeout to prevent race conditions
+  var _bodyPaddingProp = null;     // "paddingBottom" or "paddingTop"
+  var _bodyPaddingOriginal = null; // original computed value (px) before we touched it
 
   // ─── Config Flattening (nested API format → flat format) ───────
   // Mirrors the dashboard's nestedToFlattenConfig function
@@ -976,18 +979,23 @@
           style: {
             display: "flex",
             alignItems: "center",
+            flexWrap: "wrap",
+            justifyContent: "center",
             gap: (config.elementGap || 12) + "px",
             minWidth: "0",
           },
+          className: "satc-group",
         }, leftNodes);
 
         var rightGroup = el("div", {
           style: {
             display: "flex",
             alignItems: "center",
+            flexWrap: "wrap",
+            justifyContent: "center",
             gap: (config.elementGap || 12) + "px",
-            flexShrink: "0",
           },
+          className: "satc-group",
         }, rightNodes);
 
         innerChildren = [leftGroup, rightGroup];
@@ -1008,19 +1016,23 @@
     }
 
     // Content container (flex layout with configurable width and justify-content)
+    // Use columnGap + rowGap separately so the gap shorthand cannot override rowGap.
     var contentWrapStyle = {
       display: "flex",
       flexDirection: isHoriz ? "row" : "column",
       alignItems: isHoriz ? getVerticalAlignValue(config.verticalAlignment) : "center",
-      justifyContent: isHoriz ? getAlignmentValue(config.contentAlignment) : undefined,
-      gap: innerGap,
+      justifyContent: isHoriz ? (isMobile() ? "center" : getAlignmentValue(config.contentAlignment)) : undefined,
+      flexWrap: isHoriz ? "wrap" : undefined,
+      width: "100%",
+      columnGap: innerGap,
+      rowGap: isHoriz ? (config.elementGap || 12) + "px" : innerGap,
     };
     if (config.contentMaxWidth > 0) {
       contentWrapStyle.maxWidth = config.contentMaxWidth + "px";
       contentWrapStyle.margin = "0 auto";
     }
 
-    var contentWrap = el("div", { style: contentWrapStyle }, innerChildren);
+    var contentWrap = el("div", { style: contentWrapStyle, className: "satc-content" }, innerChildren);
 
     // Bar background shell (visual styling: bg, border, shadow, padding)
     var inner = el("div", {
@@ -1114,7 +1126,11 @@
       "#" + BAR_ID + " button { font-family: inherit; }\n" +
       "#" + BAR_ID + " select { font-family: inherit; }\n" +
       "#" + BAR_ID + " input { font-family: inherit; }\n" +
-      "#" + BAR_ID + " img { display: block; }\n"
+      "#" + BAR_ID + " img { display: block; }\n" +
+      "@media (max-width: " + (config && config.mobileBreakpoint || 768) + "px) {\n" +
+      "  #" + BAR_ID + " .satc-content { justify-content: center !important; flex-wrap: wrap !important; row-gap: " + (config && config.elementGap || 12) + "px !important; }\n" +
+      "  #" + BAR_ID + " .satc-group { flex-wrap: wrap !important; justify-content: center !important; }\n" +
+      "}\n"
     );
   }
 
@@ -1311,6 +1327,30 @@
     }, duration);
   }
 
+  // ─── Body Padding (prevent content hiding behind fixed bar) ────
+
+  function applyBodyPadding() {
+    var bar = document.getElementById(BAR_ID);
+    if (!bar) return;
+    var prop = config.position === "top" ? "paddingTop" :
+               config.position === "bottom" ? "paddingBottom" : null;
+    if (!prop) return;
+    _bodyPaddingProp = prop;
+    // Read the original computed value only once so we always add to it, never double-count
+    if (_bodyPaddingOriginal === null) {
+      _bodyPaddingOriginal = parseFloat(window.getComputedStyle(document.body)[prop]) || 0;
+    }
+    var barH = bar.offsetHeight + (config.barOffset || 0);
+    document.body.style[prop] = (_bodyPaddingOriginal + barH) + "px";
+  }
+
+  function removeBodyPadding() {
+    if (!_bodyPaddingProp) return;
+    document.body.style[_bodyPaddingProp] = _bodyPaddingOriginal > 0
+      ? _bodyPaddingOriginal + "px"
+      : "";
+  }
+
   // ─── Show/Hide & Animation ─────────────────────────────────────
 
   function showBar() {
@@ -1318,34 +1358,56 @@
     var bar = document.getElementById(BAR_ID);
     if (!bar) return;
 
+    // Cancel any pending hide timer so it doesn't override this show
+    if (hideBarTimer) {
+      clearTimeout(hideBarTimer);
+      hideBarTimer = null;
+    }
+
     barVisible = true;
-    bar.style.visibility = "visible";
-    bar.style.transition = "opacity " + config.animationDuration + "ms ease, transform " + config.animationDuration + "ms ease";
+    applyBodyPadding();
+
+    // Determine the resting transform for left/right positioned bars
+    var restTransform = config.position === "left" || config.position === "right"
+      ? "translateY(-50%)" : "translateY(0)";
 
     if (config.animation === "slide") {
       var from = config.position === "bottom" ? "translateY(100%)" :
                  config.position === "top" ? "translateY(-100%)" :
                  config.position === "left" ? "translateX(-100%)" : "translateX(100%)";
+      // Set starting state with no transition so the browser doesn't animate TO the "from" position
+      bar.style.transition = "none";
       bar.style.transform = from;
       bar.style.opacity = "1";
+      bar.style.visibility = "visible";
+      // One rAF to flush the style writes, then enable transition and animate to final position
       requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          bar.style.transform = config.position === "left" || config.position === "right"
-            ? "translateY(-50%)" : "translateY(0)";
-        });
+        bar.offsetHeight; // force reflow so transition starts from the "from" state
+        bar.style.transition = "transform " + config.animationDuration + "ms ease";
+        bar.style.transform = restTransform;
       });
     } else if (config.animation === "fade") {
+      // Reset transform in case a previous slide-exit left it off-screen
+      bar.style.transition = "none";
+      bar.style.transform = restTransform;
       bar.style.opacity = "0";
+      bar.style.visibility = "visible";
       requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          bar.style.opacity = "1";
-        });
+        bar.offsetHeight; // force reflow
+        bar.style.transition = "opacity " + config.animationDuration + "ms ease";
+        bar.style.opacity = "1";
       });
     } else if (config.animation === "bounce") {
+      bar.style.transition = "none";
+      bar.style.transform = restTransform;
       bar.style.opacity = "1";
+      bar.style.visibility = "visible";
       bar.style.animation = "satc-bounce " + config.animationDuration + "ms ease";
     } else {
+      bar.style.transition = "none";
+      bar.style.transform = restTransform;
       bar.style.opacity = "1";
+      bar.style.visibility = "visible";
     }
   }
 
@@ -1361,14 +1423,21 @@
                config.position === "top" ? "translateY(-100%)" :
                config.position === "left" ? "translateX(-100%)" : "translateX(100%)";
       bar.style.transform = to;
+      bar.style.opacity = "0";
     } else if (config.exitAnimation === "fade") {
       bar.style.opacity = "0";
     } else {
       bar.style.opacity = "0";
     }
 
-    setTimeout(function () {
-      bar.style.visibility = "hidden";
+    // Store timer ID so showBar() can cancel it if the bar is re-shown before this fires
+    hideBarTimer = setTimeout(function () {
+      hideBarTimer = null;
+      // Only set hidden if the bar hasn't been re-shown in the meantime
+      if (!barVisible) {
+        bar.style.visibility = "hidden";
+        removeBodyPadding();
+      }
     }, config.animationDuration);
   }
 
@@ -1410,15 +1479,20 @@
     } else {
       // scroll trigger
       var threshold = config.scrollThreshold || 50;
+      var scrollDebounceTimer = null;
       window.addEventListener("scroll", function () {
-        var scrollPct = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
-        if (scrollPct >= threshold) {
-          showBar();
-        } else {
-          if (barVisible && !barDismissed) {
-            hideBar();
+        if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
+        scrollDebounceTimer = setTimeout(function () {
+          scrollDebounceTimer = null;
+          var scrollPct = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+          if (scrollPct >= threshold) {
+            showBar();
+          } else {
+            if (barVisible && !barDismissed) {
+              hideBar();
+            }
           }
-        }
+        }, 50);
       }, { passive: true });
     }
 
@@ -1492,6 +1566,16 @@
 
         // Render the bar
         renderBar();
+
+        // Keep body padding in sync with bar height changes (e.g. viewport resize causing wrapping)
+        if (typeof ResizeObserver !== "undefined") {
+          var barEl = document.getElementById(BAR_ID);
+          if (barEl) {
+            new ResizeObserver(function () {
+              if (barVisible) applyBodyPadding();
+            }).observe(barEl);
+          }
+        }
 
         // Setup trigger behavior
         setupTrigger();
