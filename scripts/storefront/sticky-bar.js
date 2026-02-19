@@ -52,7 +52,7 @@
   var currentPrice = null;
   var quantity = 1;
   var barVisible = false;
-  var barDismissed = false;
+
   var hideBarTimer = null; // tracks pending visibility:hidden timeout to prevent race conditions
   var _bodyPaddingProp = null;     // "paddingBottom" or "paddingTop"
   var _bodyPaddingOriginal = null; // original computed value (px) before we touched it
@@ -155,16 +155,12 @@
       triggerMode: di.triggerMode || "scroll",
       triggerDelay: di.triggerDelay !== undefined ? di.triggerDelay : 3,
       scrollThreshold: di.scrollThreshold !== undefined ? di.scrollThreshold : 50,
-      showCloseButton: di.showCloseButton || false,
-      closeBehavior: di.closeBehavior || "hideTemporary",
       animation: an.type || "slide",
       animationDuration: an.duration !== undefined ? an.duration : 300,
       exitAnimation: an.exitType || "slide",
       cartAction: cb.action || "stayOnPage",
       showSuccessNotification: cb.showSuccessNotification !== undefined ? cb.showSuccessNotification : true,
       successMessage: cb.successMessage || "Added to cart successfully!",
-      autoHideAfterATC: cb.autoHideAfterATC || false,
-      autoHideDelay: cb.autoHideDelay !== undefined ? cb.autoHideDelay : 3,
       showOnMobile: mo.enabled !== undefined ? mo.enabled : true,
       mobileCompact: mo.compactMode !== undefined ? mo.compactMode : true,
       mobileBreakpoint: mo.breakpoint || 768,
@@ -1049,30 +1045,6 @@
       },
     }, [contentWrap]);
 
-    // Close button
-    if (config.showCloseButton) {
-      var closeBtn = el("div", {
-        style: {
-          position: "absolute",
-          top: "4px",
-          right: "4px",
-          width: "20px",
-          height: "20px",
-          borderRadius: "50%",
-          backgroundColor: "rgba(229,231,235,0.8)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          transition: "background-color 0.15s",
-        },
-        onClick: handleClose,
-        onMouseenter: function (e) { e.currentTarget.style.backgroundColor = "rgba(209,213,219,0.8)"; },
-        onMouseleave: function (e) { e.currentTarget.style.backgroundColor = "rgba(229,231,235,0.8)"; },
-      }, [svgIcon("x")]);
-      inner.appendChild(closeBtn);
-    }
-
     // Width container (bar-level max width)
     var widthWrap = el("div", {
       style: config.barWidthMode === "contained" ? {
@@ -1354,7 +1326,7 @@
   // ─── Show/Hide & Animation ─────────────────────────────────────
 
   function showBar() {
-    if (barVisible || barDismissed) return;
+    if (barVisible) return;
     var bar = document.getElementById(BAR_ID);
     if (!bar) return;
 
@@ -1441,34 +1413,9 @@
     }, config.animationDuration);
   }
 
-  function handleClose() {
-    hideBar();
-    barDismissed = true;
-
-    if (config.closeBehavior === "hideForever") {
-      try { sessionStorage.setItem("satc-dismissed", "1"); } catch (e) {}
-    } else if (config.closeBehavior === "hideUntilScroll") {
-      barDismissed = false; // will re-show on next scroll trigger
-      // Temporarily suppress for a moment
-      setTimeout(function () { barDismissed = false; }, 500);
-    } else if (config.closeBehavior === "hideTemporary") {
-      setTimeout(function () {
-        barDismissed = false;
-      }, (config.autoHideDelay || 3) * 1000);
-    }
-  }
-
   // ─── Trigger Setup ─────────────────────────────────────────────
 
   function setupTrigger() {
-    // Check if previously dismissed forever
-    try {
-      if (sessionStorage.getItem("satc-dismissed") === "1") {
-        barDismissed = true;
-        return;
-      }
-    } catch (e) {}
-
     // Mobile check
     if (isMobile() && !config.showOnMobile) return;
 
@@ -1488,7 +1435,7 @@
           if (scrollPct >= threshold) {
             showBar();
           } else {
-            if (barVisible && !barDismissed) {
+            if (barVisible) {
               hideBar();
             }
           }

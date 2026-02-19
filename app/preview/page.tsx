@@ -207,6 +207,19 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
   <script>
     var __cfg = ${configJSON};
     var __prod = ${productJSON};
+    // Disable ATC button action in preview mode
+    document.addEventListener('click', function(e) {
+      var t = e.target;
+      while (t) {
+        if (t.id && t.id.indexOf('-atc-btn') !== -1) {
+          e.stopPropagation();
+          e.preventDefault();
+          return;
+        }
+        t = t.parentElement;
+      }
+    }, true);
+
     var _of = window.fetch;
     window.fetch = function(url, opts) {
       var u = String(url);
@@ -317,11 +330,14 @@ export default function PreviewPage() {
         <div className="flex-1 overflow-auto">
           <div className="flex flex-col items-center justify-start p-4 sm:p-6 min-w-max">
             <div className="bg-slate-900 rounded-[44px] p-3 shadow-2xl">
-              <div className="rounded-[36px] overflow-hidden" style={{ width: "390px", height: "760px" }}>
+              <div className="rounded-[36px] overflow-hidden" style={{ width: "390px", height: "760px", display: "flex", flexDirection: "column" }}>
                 <iframe
                   srcDoc={srcdoc}
-                  style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+                  style={{ width: "100%", flex: 1, border: "none", display: "block", minHeight: 0 }}
                 />
+                <div style={{ height: "22px", background: "white", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{ width: "120px", height: "4px", background: "#d1d5db", borderRadius: "2px" }} />
+                </div>
               </div>
             </div>
             <p className="text-center text-xs text-gray-400 mt-3">iPhone 14 Pro · 390×844</p>

@@ -92,9 +92,6 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
     triggerMode: "scroll",
     triggerDelay: 3,
     scrollThreshold: 50,
-    showCloseButton: false,
-    closeBehavior: "hideTemporary",
-
     // Behavior - Animation
     animation: "slide",
     animationDuration: 300,
@@ -104,9 +101,6 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
     cartAction: "stayOnPage",
     showSuccessNotification: true,
     successMessage: "Added to cart successfully!",
-    autoHideAfterATC: false,
-    autoHideDelay: 3,
-
     // Behavior - Mobile
     showOnMobile: true,
     mobileCompact: true,

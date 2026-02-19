@@ -49,30 +49,6 @@ export default function BehaviorPanel({ config, updateConfig }: { config: any, u
               />
             )}
 
-            <div className="border-t border-gray-100 pt-4" />
-
-            <Toggle
-              checked={config.showCloseButton}
-              onChange={(v) => updateConfig("showCloseButton", v)}
-              label="Show Close Button"
-              description="Allow visitors to dismiss the sticky bar"
-            />
-            {config.showCloseButton && (
-              <div className="pl-1 border-l-2 border-blue-200 ml-1">
-                <div className="pl-4">
-                  <SelectField
-                    label="Close Behavior"
-                    value={config.closeBehavior}
-                    onChange={(v) => updateConfig("closeBehavior", v)}
-                    options={[
-                      { value: "hideTemporary", label: "Hide temporarily (reappears on next scroll)" },
-                      { value: "hideUntilScroll", label: "Hide until page is scrolled again" },
-                      { value: "hideForever", label: "Hide for entire session" },
-                    ]}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         </SectionCard>
   
@@ -148,28 +124,6 @@ export default function BehaviorPanel({ config, updateConfig }: { config: any, u
               </div>
             )}
 
-            <div className="border-t border-gray-100 pt-4" />
-
-            <Toggle
-              checked={config.autoHideAfterATC}
-              onChange={(v) => updateConfig("autoHideAfterATC", v)}
-              label="Auto-Hide After Add to Cart"
-              description="Automatically hide the sticky bar after a successful add"
-            />
-            {config.autoHideAfterATC && (
-              <div className="pl-1 border-l-2 border-blue-200 ml-1">
-                <div className="pl-4">
-                  <NumberInput
-                    label="Hide After"
-                    value={config.autoHideDelay}
-                    onChange={(v) => updateConfig("autoHideDelay", v)}
-                    min={1}
-                    max={30}
-                    suffix="sec"
-                  />
-                </div>
-              </div>
-            )}
           </div>
         </SectionCard>
   

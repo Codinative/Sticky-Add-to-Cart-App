@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Icons } from "../../components/common/icons";
 import TabButton from "../../components/common/tabButton";
@@ -24,6 +24,8 @@ export default function StickyBarDashboard() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: "success" | "error" }>({ visible: false, message: "", type: "success" });
   const [loading, setLoading] = useState(true);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpRef = useRef<HTMLDivElement>(null);
   const hasChanges = JSON.stringify(config) !== JSON.stringify(savedConfig);
   const encodedContext = useSession()?.context || "";
 
@@ -95,6 +97,17 @@ export default function StickyBarDashboard() {
     loadConfig();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Close help dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (helpRef.current && !helpRef.current.contains(e.target as Node)) {
+        setHelpOpen(false);
+      }
+    }
+    if (helpOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [helpOpen]);
 
   const updateConfig = useCallback((key: string, value: any) => {
     setConfig((prev) => prev ? ({ ...prev, [key]: value }) : null);
@@ -177,37 +190,49 @@ export default function StickyBarDashboard() {
         {/* Header */}
         <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
           <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 py-5 sm:h-20">
-              <div className="flex items-center w-full sm:w-auto justify-center sm:justify-start">
-                <Image
-                  src="/navbar-logo.png"
-                  alt="Sticky Add to Cart"
-                  width={240}
-                  height={60}
-                  className="h-12 sm:h-14 w-auto object-contain"
-                  priority
-                />
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                <div className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${config?.enabled ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${config?.enabled ? "bg-emerald-500" : "bg-slate-400"}`} />
-                  {config?.enabled ? "Active" : "Inactive"}
-                </div>
+            <div className="flex items-center justify-between h-16 sm:h-20">
+              <Image
+                src="/navbar-logo.png"
+                alt="Sticky Add to Cart"
+                width={240}
+                height={60}
+                className="h-10 sm:h-14 w-auto object-contain"
+                priority
+              />
+
+              {/* Help dropdown */}
+              <div ref={helpRef} className="relative">
                 <button
-                  onClick={handleSave}
-                  disabled={!hasChanges || saving}
-                  className={`
-                    flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all flex-1 sm:flex-initial justify-center
-                    ${hasChanges
-                      ? "bg-slate-900 text-white hover:bg-slate-800"
-                      : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                    }
-                  `}
+                  onClick={() => setHelpOpen((o) => !o)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
                 >
-                  <Icons.Save size={15} />
-                  <span className="hidden sm:inline">{saving ? "Saving..." : "Save Changes"}</span>
-                  <span className="sm:hidden">{saving ? "Saving..." : "Save"}</span>
+                  <Icons.HelpCircle size={15} />
+                  <span>Help</span>
+                  <span style={{ display: "flex", transition: "transform 0.2s", transform: helpOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                    <Icons.ChevronDown size={13} />
+                  </span>
                 </button>
+
+                {helpOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl border border-gray-200 shadow-xl z-50 overflow-hidden animate-[fadeIn_0.15s_ease-out]">
+                    <div className="px-4 py-4 space-y-3">
+                      <div>
+                        <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mb-0.5">App Name</p>
+                        <p className="text-sm font-semibold text-slate-800">Sticky Add to Cart</p>
+                      </div>
+                      <div className="border-t border-gray-100" />
+                      <div>
+                        <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mb-0.5">Version</p>
+                        <p className="text-sm text-slate-700">0.1.0</p>
+                      </div>
+                      <div className="border-t border-gray-100" />
+                      <div>
+                        <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mb-0.5">Contact Email</p>
+                        <a href="mailto:info@codinative.com" className="text-sm text-blue-600 hover:underline">info@codinative.com</a>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -250,11 +275,11 @@ export default function StickyBarDashboard() {
                     <Icons.Eye size={16} />
                   </span>
                   <span className="text-sm font-semibold text-slate-900">Live Preview</span>
-                  {hasChanges && (
-                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-semibold uppercase tracking-wider border border-amber-200">
-                      Unsaved
-                    </span>
-                  )}
+                  {/* Active / Inactive status */}
+                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium border transition-all ${config?.enabled ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${config?.enabled ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                    {config?.enabled ? "Active" : "Inactive"}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   {/* Full page preview button */}
@@ -271,21 +296,21 @@ export default function StickyBarDashboard() {
                     <Icons.Maximize size={13} />
                     <span className="hidden sm:inline">Full Preview</span>
                   </button>
-                <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg flex-1 sm:flex-initial">
-                  <button
-                    onClick={() => setPreviewDevice("desktop")}
-                    className={`flex-1 sm:flex-initial p-2 rounded-md transition-all flex items-center justify-center ${previewDevice === "desktop" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900 hover:bg-slate-200"}`}
-                  >
-                    <Icons.Monitor size={16} />
-                  </button>
-                  <button
-                    onClick={() => setPreviewDevice("mobile")}
-                    className={`flex-1 sm:flex-initial p-2 rounded-md transition-all flex items-center justify-center ${previewDevice === "mobile" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900 hover:bg-slate-200"}`}
-                  >
-                    <Icons.Smartphone size={16} />
-                  </button>
+                  <div className="flex items-center gap-1 p-0.5 bg-slate-100 rounded-lg flex-1 sm:flex-initial">
+                    <button
+                      onClick={() => setPreviewDevice("desktop")}
+                      className={`flex-1 sm:flex-initial p-2 rounded-md transition-all flex items-center justify-center ${previewDevice === "desktop" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900 hover:bg-slate-200"}`}
+                    >
+                      <Icons.Monitor size={16} />
+                    </button>
+                    <button
+                      onClick={() => setPreviewDevice("mobile")}
+                      className={`flex-1 sm:flex-initial p-2 rounded-md transition-all flex items-center justify-center ${previewDevice === "mobile" ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-900 hover:bg-slate-200"}`}
+                    >
+                      <Icons.Smartphone size={16} />
+                    </button>
+                  </div>
                 </div>
-              </div>
               </div>
 
               {/* Preview Area */}

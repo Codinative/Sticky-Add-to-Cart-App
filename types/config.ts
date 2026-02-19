@@ -80,9 +80,6 @@ export interface DefaultStickyBarConfig {
     triggerMode: "scroll" | "always" | "delay";
     triggerDelay: number;
     scrollThreshold: number;
-    showCloseButton: boolean;
-    closeBehavior: "hideForever" | "hideUntilScroll" | "hideTemporary";
-
     // Behavior - Animation
     animation: "slide" | "fade" | "bounce" | "none";
     animationDuration: number;
@@ -92,9 +89,6 @@ export interface DefaultStickyBarConfig {
     cartAction: "stayOnPage" | "redirect" | "drawer" | "flyToCart";
     showSuccessNotification: boolean;
     successMessage: string;
-    autoHideAfterATC: boolean;
-    autoHideDelay: number;
-
     // Behavior - Mobile
     showOnMobile: boolean;
     mobileCompact: boolean;
@@ -236,8 +230,6 @@ interface DisplayConfig {
     triggerMode: "scroll" | "always" | "delay";
     triggerDelay: number;
     scrollThreshold: number;
-    showCloseButton: boolean;
-    closeBehavior: "hideForever" | "hideUntilScroll" | "hideTemporary";
 }
 
 interface AnimationConfig {
@@ -250,8 +242,6 @@ interface CartBehaviorConfig {
     action: "stayOnPage" | "redirect" | "drawer" | "flyToCart";
     showSuccessNotification: boolean;
     successMessage: string;
-    autoHideAfterATC: boolean;
-    autoHideDelay: number;
 }
 
 interface MobileConfig {

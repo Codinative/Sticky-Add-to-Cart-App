@@ -85,7 +85,6 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
       flexDirection: isHorizontal ? "row" : "column",
       justifyContent: isHorizontal ? (isMobile ? "center" : (alignmentMap[config.contentAlignment] || "space-between")) : undefined,
       alignItems: isHorizontal ? (verticalAlignMap[config.verticalAlignment] || "center") : "center",
-      rowGap: isMobile && isHorizontal ? `${Math.round((config.elementGap || 12) * mobileScale)}px` : undefined,
     };
 
     // Contained width style
@@ -478,9 +477,10 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
               className={"flex-wrap"}
               style={{
                 ...contentStyle,
-                gap: isHorizontal && leftElements.length > 0 && rightElements.length > 0
+                columnGap: isHorizontal && leftElements.length > 0 && rightElements.length > 0
                   ? `${Math.round((config.groupGap ?? 32) * mobileScale)}px`
                   : `${Math.round((config.elementGap || 12) * mobileScale)}px`,
+                rowGap: isHorizontal ? `${Math.round((config.elementGap || 12) * mobileScale)}px` : undefined,
               }}
             >
               {isHorizontal && leftElements.length > 0 && rightElements.length > 0 ? (
@@ -502,14 +502,6 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                 visibleElements.map((el: { id: string, visible: boolean }) => renderElement(el))
               )}
             </div>
-            {config.showCloseButton && (
-              <div
-                className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gray-200/80 flex items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-300/80 transition-colors"
-                style={{ fontSize: "9px" }}
-              >
-                <Icons.X size={9} />
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -588,13 +580,13 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
         </div>
   
         {/* Preview Status */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mt-3 px-2">
+        {/* <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mt-3 px-2">
           <div className={`w-2 h-2 rounded-full ${config.enabled ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
           <span className="text-[10px] sm:text-xs text-gray-500 text-center">
             {config.enabled ? "Sticky bar active" : "Sticky bar disabled"} · {config.position} position · {config.triggerMode === "scroll" ? "Shows on scroll" : config.triggerMode === "always" ? "Always visible" : `Shows after ${config.triggerDelay}s`}
             {config.showCloseButton && " · Dismissible"}
           </span>
-        </div>
+        </div> */}
       </div>
     );
   }
