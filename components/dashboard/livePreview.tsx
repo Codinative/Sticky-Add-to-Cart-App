@@ -232,7 +232,7 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
             return match?.displayType || "dropdown";
           };
 
-          const renderVariantControl = (name: string, values: string[], activeVal: string, displayType: string) => {
+          const renderVariantControl = (_name: string, values: string[], activeVal: string, displayType: string) => {
             const variantBorderRadius = Math.round(config.variantBorderRadius * mobileScale);
             switch (displayType) {
               case "dropdown":
@@ -458,16 +458,6 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
       }
     };
   
-    const barPositionClasses = {
-      top: "top-0 left-0 right-0",
-      bottom: "bottom-0 left-0 right-0",
-      left: "top-1/2 -translate-y-1/2 left-0",
-      right: "top-1/2 -translate-y-1/2 right-0",
-    };
-  
-    const barFlexDirection = isHorizontal
-      ? `flex-row gap-${isMobile ? 2 : 3}`
-      : `flex-col items-center gap-3 py-2`;
 
     const stickyBarContent = config.enabled ? (
       <div className="shrink-0">
@@ -535,11 +525,22 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
             {/* Minimal product page mockup */}
             <div className={`flex gap-3 sm:gap-6 ${isMobile ? "flex-col" : ""}`}>
               {/* Product Image */}
-              <div className={`${isMobile ? "w-full h-32 sm:h-40" : "w-1/2 h-40 sm:h-48"} bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg sm:rounded-xl flex items-center justify-center`}>
-                <div className="text-gray-300">
-                  <svg width="32" height="32" className="sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                    <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
-                  </svg>
+              <div className={`${isMobile ? "w-full" : "w-1/2"} flex flex-col gap-2`}>
+                <div className={`${isMobile ? "h-40 sm:h-48" : "h-52 sm:h-64"} bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg sm:rounded-xl flex items-center justify-center`}>
+                  <div className="text-gray-300">
+                    <svg width="32" height="32" className="sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                      <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex gap-1.5">
+                  {[0, 1, 2, 3].map(i => (
+                    <div key={i} className={`${isMobile ? "w-9 h-9" : "w-12 h-12 sm:w-14 sm:h-14"} rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex-shrink-0 flex items-center justify-center ${i === 0 ? "border-2 border-gray-800" : "border border-gray-200"}`}>
+                      <svg width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+                      </svg>
+                    </div>
+                  ))}
                 </div>
               </div>
               {/* Product Info */}

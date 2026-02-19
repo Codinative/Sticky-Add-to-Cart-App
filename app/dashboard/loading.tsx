@@ -115,11 +115,11 @@ function SkeletonPreview() {
           <div className="flex gap-6">
             {/* Product Image */}
             <div className="w-1/2">
-              <Shimmer className="w-full h-48" rounded="rounded-xl" />
+              <Shimmer className="w-full h-64" rounded="rounded-xl" />
               {/* Thumbnail row */}
-              <div className="flex gap-2 mt-3">
+              <div className="flex gap-2 mt-2">
                 {[1,2,3,4].map(i => (
-                  <Shimmer key={i} className="w-12 h-12" rounded="rounded-lg" />
+                  <Shimmer key={i} className="w-14 h-14" rounded="rounded-lg" />
                 ))}
               </div>
             </div>
@@ -171,11 +171,6 @@ function SkeletonPreview() {
           </div>
         </div>
       </div>
-      {/* Status line */}
-      <div className="flex items-center justify-center gap-2 mt-3">
-        <Shimmer className="w-2 h-2" rounded="rounded-full" />
-        <Shimmer className="h-3 w-48" rounded="rounded" />
-      </div>
     </div>
   );
 }
@@ -221,20 +216,13 @@ export default function StickyBarDashboardSkeleton() {
       <div className="min-h-screen bg-[#F7F8FA]" style={{ animation: "skeletonFadeIn 0.3s ease-out" }}>
 
         {/* ─── Header ─── */}
-        <div className="bg-white border-b border-gray-200">
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
           <div className="max-w-[1440px] mx-auto px-6">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-3">
-                <Shimmer className="w-9 h-9" rounded="rounded-xl" />
-                <div className="flex flex-col gap-1">
-                  <Shimmer className="h-4 w-36" rounded="rounded" />
-                  <Shimmer className="h-3 w-52" rounded="rounded" />
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Shimmer className="h-7 w-20" rounded="rounded-full" />
-                <Shimmer className="h-9 w-20" rounded="rounded-lg" />
-              </div>
+            <div className="flex items-center justify-between h-20">
+              {/* Logo shimmer — matches navbar-logo.png dimensions */}
+              <Shimmer className="h-12 w-44" rounded="rounded-lg" />
+              {/* Help button shimmer */}
+              <Shimmer className="h-9 w-24" rounded="rounded-lg" />
             </div>
           </div>
         </div>
@@ -278,14 +266,20 @@ export default function StickyBarDashboardSkeleton() {
             <div className="flex-1 flex flex-col gap-4 min-w-0">
 
               {/* Preview Toolbar */}
-              <div className="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-4 py-2.5">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 px-4 py-2.5">
+                {/* Left: eye icon + "Live Preview" label + Active badge */}
+                <div className="flex items-center gap-2.5">
                   <Shimmer className="w-4 h-4" rounded="rounded" />
                   <Shimmer className="h-4 w-24" rounded="rounded" />
+                  <Shimmer className="h-6 w-16" rounded="rounded-md" />
                 </div>
-                <div className="flex items-center gap-1 p-0.5 bg-gray-100 rounded-lg">
-                  <Shimmer className="w-8 h-8" rounded="rounded-md" />
-                  <Shimmer className="w-8 h-8" rounded="rounded-md" />
+                {/* Right: Full Preview button + device toggles */}
+                <div className="flex items-center gap-2">
+                  <Shimmer className="h-7 w-28" rounded="rounded-lg" />
+                  <div className="flex items-center gap-1 p-0.5 bg-gray-100 rounded-lg">
+                    <Shimmer className="w-8 h-8" rounded="rounded-md" />
+                    <Shimmer className="w-8 h-8" rounded="rounded-md" />
+                  </div>
                 </div>
               </div>
 
