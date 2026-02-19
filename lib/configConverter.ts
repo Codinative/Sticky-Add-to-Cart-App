@@ -97,8 +97,6 @@ export function flattenToNestedConfig(config: DefaultStickyBarConfig): StickyBar
         triggerMode: config.triggerMode,
         triggerDelay: config.triggerDelay,
         scrollThreshold: config.scrollThreshold,
-        showCloseButton: config.showCloseButton,
-        closeBehavior: config.closeBehavior,
       },
       animation: {
         type: config.animation,
@@ -109,8 +107,6 @@ export function flattenToNestedConfig(config: DefaultStickyBarConfig): StickyBar
         action: config.cartAction,
         showSuccessNotification: config.showSuccessNotification,
         successMessage: config.successMessage,
-        autoHideAfterATC: config.autoHideAfterATC,
-        autoHideDelay: config.autoHideDelay,
       },
       mobile: {
         enabled: config.showOnMobile,
@@ -213,9 +209,6 @@ export function nestedToFlattenConfig(nested: StickyBarConfig): DefaultStickyBar
     triggerMode: nested.behavior?.display?.triggerMode ?? d.triggerMode,
     triggerDelay: nested.behavior?.display?.triggerDelay ?? d.triggerDelay,
     scrollThreshold: nested.behavior?.display?.scrollThreshold ?? d.scrollThreshold,
-    showCloseButton: nested.behavior?.display?.showCloseButton ?? d.showCloseButton,
-    closeBehavior: nested.behavior?.display?.closeBehavior ?? d.closeBehavior,
-
     // Behavior - Animation
     animation: nested.behavior?.animation?.type ?? d.animation,
     animationDuration: nested.behavior?.animation?.duration ?? d.animationDuration,
@@ -225,9 +218,6 @@ export function nestedToFlattenConfig(nested: StickyBarConfig): DefaultStickyBar
     cartAction: nested.behavior?.cartBehavior?.action ?? d.cartAction,
     showSuccessNotification: nested.behavior?.cartBehavior?.showSuccessNotification ?? d.showSuccessNotification,
     successMessage: nested.behavior?.cartBehavior?.successMessage ?? d.successMessage,
-    autoHideAfterATC: nested.behavior?.cartBehavior?.autoHideAfterATC ?? d.autoHideAfterATC,
-    autoHideDelay: nested.behavior?.cartBehavior?.autoHideDelay ?? d.autoHideDelay,
-
     // Behavior - Mobile
     showOnMobile: nested.behavior?.mobile?.enabled ?? d.showOnMobile,
     mobileCompact: nested.behavior?.mobile?.compactMode ?? d.mobileCompact,

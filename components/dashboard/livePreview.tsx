@@ -502,14 +502,6 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
                 visibleElements.map((el: { id: string, visible: boolean }) => renderElement(el))
               )}
             </div>
-            {config.showCloseButton && (
-              <div
-                className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gray-200/80 flex items-center justify-center text-gray-500 cursor-pointer hover:bg-gray-300/80 transition-colors"
-                style={{ fontSize: "9px" }}
-              >
-                <Icons.X size={9} />
-              </div>
-            )}
           </div>
         </div>
       </div>
