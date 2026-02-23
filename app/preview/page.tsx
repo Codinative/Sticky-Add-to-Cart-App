@@ -26,36 +26,15 @@ const MOCK_PRODUCT = {
   },
 };
 
-function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
+function buildSrcdoc(nestedConfig: object, isMobile: boolean, position: string): string {
   const configJSON = JSON.stringify(nestedConfig);
   const productJSON = JSON.stringify(MOCK_PRODUCT);
-
-  const chrome = isMobile
-    ? `<div style="position:sticky;top:0;z-index:9998;background:#fff;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f3f4f6;">
-        <span style="font-size:12px;font-weight:700;color:#111;">9:41</span>
-        <div style="width:18px;height:11px;border:2px solid #111;border-radius:3px;position:relative;">
-          <div style="position:absolute;left:1px;top:1px;bottom:1px;right:3px;background:#111;border-radius:1px;"></div>
-          <div style="position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:2px;height:5px;background:#9ca3af;border-radius:0 1px 1px 0;"></div>
-        </div>
-      </div>
-      <div style="position:sticky;top:36px;z-index:9997;background:#f9fafb;border-bottom:1px solid #e5e7eb;padding:6px 10px;">
-        <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:11px;color:#9ca3af;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-          yourstore.mybigcommerce.com/product
-        </div>
-      </div>`
-    : `<div style="position:sticky;top:0;z-index:9998;background:#f3f4f6;border-bottom:1px solid #e5e7eb;padding:10px 16px;display:flex;align-items:center;gap:12px;">
-        <div style="display:flex;gap:6px;">
-          <div style="width:12px;height:12px;border-radius:50%;background:#EF4444;"></div>
-          <div style="width:12px;height:12px;border-radius:50%;background:#F59E0B;"></div>
-          <div style="width:12px;height:12px;border-radius:50%;background:#22C55E;"></div>
-        </div>
-        <div style="flex:1;background:white;border:1px solid #e5e7eb;border-radius:6px;padding:5px 12px;font-size:12px;color:#9ca3af;text-align:center;max-width:440px;margin:0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-          yourstore.mybigcommerce.com/premium-wireless-headphones
-        </div>
-      </div>`;
+  const bottomPaddingMobile = position === "bottom" ? "160px" : "24px";
+  const bottomPaddingDesktop = position === "bottom" ? "200px" : "32px";
+  const bottomPaddingDesktopSm = position === "bottom" ? "180px" : "24px";
 
   const content = isMobile
-    ? `<div style="padding-bottom:160px;">
+    ? `<div style="padding-bottom:${bottomPaddingMobile};">
         <div style="aspect-ratio:1/1;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);display:flex;align-items:center;justify-content:center;">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </div>
@@ -184,21 +163,21 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: white; overflow-y: auto; min-height: 100%; }
 
     /* Desktop product page responsive layout */
-    .page-wrap { max-width: 1200px; margin: 0 auto; padding: 32px 48px 200px; }
+    .page-wrap { max-width: 1200px; margin: 0 auto; padding: 32px 48px ${bottomPaddingDesktop}; }
     .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9ca3af; margin-bottom: 24px; }
     .prod-layout { display: flex; gap: 48px; align-items: flex-start; }
     .prod-img-col { width: 50%; flex-shrink: 0; }
     .prod-info-col { flex: 1; min-width: 0; }
     .desc-section { margin-top: 48px; border-top: 1px solid #f3f4f6; padding-top: 32px; }
     @media (max-width: 720px) {
-      .page-wrap { padding: 16px 16px 180px; }
+      .page-wrap { padding: 16px 16px ${bottomPaddingDesktopSm}; }
       .breadcrumb { display: none; }
       .prod-layout { flex-direction: column; gap: 20px; }
       .prod-img-col { width: 100%; }
       .desc-section { margin-top: 28px; padding-top: 20px; }
     }
     @media (min-width: 721px) and (max-width: 960px) {
-      .page-wrap { padding: 24px 28px 200px; }
+      .page-wrap { padding: 24px 28px ${bottomPaddingDesktop}; }
       .prod-layout { gap: 28px; }
       .prod-img-col { width: 45%; }
     }
@@ -232,7 +211,6 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
     };
   </script>
 </head><body>
-  ${chrome}
   ${content}
   <script src="/sticky-bar.min.js?sid=preview&app=https://preview.invalid"></script>
 </body></html>`;
@@ -278,7 +256,7 @@ export default function PreviewPage() {
 
   const nestedConfig = flattenToNestedConfig(config);
   const isMobile = device === "mobile";
-  const srcdoc = buildSrcdoc(nestedConfig, isMobile);
+  const srcdoc = buildSrcdoc(nestedConfig, isMobile, config.position);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F9FA]" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
@@ -328,6 +306,21 @@ export default function PreviewPage() {
           <div className="flex flex-col items-center justify-start p-4 sm:p-6 min-w-max">
             <div className="bg-slate-900 rounded-[44px] p-3 shadow-2xl">
               <div className="rounded-[36px] overflow-hidden" style={{ width: "390px", height: "760px", display: "flex", flexDirection: "column" }}>
+                {/* Mobile status bar — outside iframe so fixed bar in iframe starts below it */}
+                <div style={{ background: "#fff", padding: "8px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#111" }}>9:41</span>
+                  <div style={{ width: "18px", height: "11px", border: "2px solid #111", borderRadius: "3px", position: "relative" }}>
+                    <div style={{ position: "absolute", left: "1px", top: "1px", bottom: "1px", right: "3px", background: "#111", borderRadius: "1px" }} />
+                    <div style={{ position: "absolute", right: "-4px", top: "50%", transform: "translateY(-50%)", width: "2px", height: "5px", background: "#9ca3af", borderRadius: "0 1px 1px 0" }} />
+                  </div>
+                </div>
+                {/* Mobile URL bar — outside iframe */}
+                <div style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "6px 10px", flexShrink: 0 }}>
+                  <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "5px 10px", fontSize: "11px", color: "#9ca3af", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    yourstore.mybigcommerce.com/product
+                  </div>
+                </div>
+                {/* Website content iframe — fixed bar at top:0 lands correctly below the chrome above */}
                 <iframe
                   srcDoc={srcdoc}
                   style={{ width: "100%", flex: 1, border: "none", display: "block", minHeight: 0 }}
@@ -341,10 +334,24 @@ export default function PreviewPage() {
           </div>
         </div>
       ) : (
-        <iframe
-          srcDoc={srcdoc}
-          style={{ flex: 1, border: "none", width: "100%", display: "block", minHeight: "calc(100vh - 53px)" }}
-        />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
+          {/* Desktop fake browser chrome — outside iframe so fixed bar in iframe starts below it */}
+          <div style={{ background: "#f3f4f6", borderBottom: "1px solid #e5e7eb", padding: "10px 16px", display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#EF4444" }} />
+              <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#F59E0B" }} />
+              <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#22C55E" }} />
+            </div>
+            <div style={{ flex: 1, background: "white", border: "1px solid #e5e7eb", borderRadius: "6px", padding: "5px 12px", fontSize: "12px", color: "#9ca3af", textAlign: "center", maxWidth: "440px", margin: "0 auto", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              yourstore.mybigcommerce.com/premium-wireless-headphones
+            </div>
+          </div>
+          {/* Website content iframe — fixed bar at top:0 lands correctly below the chrome above */}
+          <iframe
+            srcDoc={srcdoc}
+            style={{ flex: 1, border: "none", width: "100%", display: "block", minHeight: 0 }}
+          />
+        </div>
       )}
     </div>
   );
