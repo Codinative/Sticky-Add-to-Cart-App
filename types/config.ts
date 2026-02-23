@@ -261,6 +261,7 @@ export interface Element {
     id: string;
     label: string;
     visible: boolean;
+    group: "left" | "right";
 }
 
 export type VariantDisplayType = "dropdown" | "swatch" | "radioButtons" | "rectangleList";

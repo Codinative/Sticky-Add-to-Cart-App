@@ -31,19 +31,19 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
   const productJSON = JSON.stringify(MOCK_PRODUCT);
 
   const chrome = isMobile
-    ? `<div style="flex-shrink:0;background:#fff;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f3f4f6;">
+    ? `<div style="position:sticky;top:0;z-index:9998;background:#fff;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f3f4f6;">
         <span style="font-size:12px;font-weight:700;color:#111;">9:41</span>
         <div style="width:18px;height:11px;border:2px solid #111;border-radius:3px;position:relative;">
           <div style="position:absolute;left:1px;top:1px;bottom:1px;right:3px;background:#111;border-radius:1px;"></div>
           <div style="position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:2px;height:5px;background:#9ca3af;border-radius:0 1px 1px 0;"></div>
         </div>
       </div>
-      <div style="flex-shrink:0;background:#f9fafb;border-bottom:1px solid #e5e7eb;padding:6px 10px;">
+      <div style="position:sticky;top:36px;z-index:9997;background:#f9fafb;border-bottom:1px solid #e5e7eb;padding:6px 10px;">
         <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;font-size:11px;color:#9ca3af;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
           yourstore.mybigcommerce.com/product
         </div>
       </div>`
-    : `<div style="flex-shrink:0;background:#f3f4f6;border-bottom:1px solid #e5e7eb;padding:10px 16px;display:flex;align-items:center;gap:12px;">
+    : `<div style="position:sticky;top:0;z-index:9998;background:#f3f4f6;border-bottom:1px solid #e5e7eb;padding:10px 16px;display:flex;align-items:center;gap:12px;">
         <div style="display:flex;gap:6px;">
           <div style="width:12px;height:12px;border-radius:50%;background:#EF4444;"></div>
           <div style="width:12px;height:12px;border-radius:50%;background:#F59E0B;"></div>
@@ -55,7 +55,7 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
       </div>`;
 
   const content = isMobile
-    ? `<div style="padding-bottom:200px;">
+    ? `<div style="padding-bottom:160px;">
         <div style="aspect-ratio:1/1;background:linear-gradient(135deg,#f3f4f6,#e5e7eb);display:flex;align-items:center;justify-content:center;">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </div>
@@ -180,26 +180,25 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; flex-direction: column; overflow: hidden; background: white; }
-    .scroll-area { flex: 1; overflow-y: auto; }
+    html { height: 100%; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: white; overflow-y: auto; min-height: 100%; }
 
     /* Desktop product page responsive layout */
-    .page-wrap { max-width: 1200px; margin: 0 auto; padding: 32px 48px 140px; }
+    .page-wrap { max-width: 1200px; margin: 0 auto; padding: 32px 48px 200px; }
     .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9ca3af; margin-bottom: 24px; }
     .prod-layout { display: flex; gap: 48px; align-items: flex-start; }
     .prod-img-col { width: 50%; flex-shrink: 0; }
     .prod-info-col { flex: 1; min-width: 0; }
     .desc-section { margin-top: 48px; border-top: 1px solid #f3f4f6; padding-top: 32px; }
     @media (max-width: 720px) {
-      .page-wrap { padding: 16px 16px 120px; }
+      .page-wrap { padding: 16px 16px 180px; }
       .breadcrumb { display: none; }
       .prod-layout { flex-direction: column; gap: 20px; }
       .prod-img-col { width: 100%; }
       .desc-section { margin-top: 28px; padding-top: 20px; }
     }
     @media (min-width: 721px) and (max-width: 960px) {
-      .page-wrap { padding: 24px 28px 140px; }
+      .page-wrap { padding: 24px 28px 200px; }
       .prod-layout { gap: 28px; }
       .prod-img-col { width: 45%; }
     }
@@ -234,7 +233,7 @@ function buildSrcdoc(nestedConfig: object, isMobile: boolean): string {
   </script>
 </head><body>
   ${chrome}
-  <div class="scroll-area">${content}</div>
+  ${content}
   <script src="/sticky-bar.min.js?sid=preview&app=https://preview.invalid"></script>
 </body></html>`;
 }
@@ -278,8 +277,6 @@ export default function PreviewPage() {
   }
 
   const nestedConfig = flattenToNestedConfig(config);
-  // Force the bar to show immediately in preview regardless of trigger settings
-  nestedConfig.behavior.display.triggerMode = "always";
   const isMobile = device === "mobile";
   const srcdoc = buildSrcdoc(nestedConfig, isMobile);
 

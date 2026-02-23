@@ -195,7 +195,10 @@ export function nestedToFlattenConfig(nested: StickyBarConfig): DefaultStickyBar
 
     // Layout
     position: nested.layout?.position?.position ?? d.position,
-    elements: nested.layout?.elementArrangement?.elements ?? d.elements,
+    elements: (nested.layout?.elementArrangement?.elements ?? d.elements).map((el: { id: string; label: string; visible: boolean; group?: "left" | "right" }) => ({
+      ...el,
+      group: el.group ?? (["image", "title", "price"].includes(el.id) ? "left" : "right"),
+    })),
     elementGap: nested.layout?.spacing?.elementGap ?? d.elementGap,
     groupGap: nested.layout?.spacing?.groupGap ?? d.groupGap,
     barOffset: nested.layout?.spacing?.barOffset ?? d.barOffset,

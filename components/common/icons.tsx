@@ -113,6 +113,11 @@ export const Icons = {
       <line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />
     </svg>
   ),
+  ArrowLeftRight: ({ size = 14 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="17 8 21 12 17 16" /><polyline points="7 8 3 12 7 16" /><line x1="3" y1="12" x2="21" y2="12" />
+    </svg>
+  ),
   // ─── New Icons ─────────────────────────────────────────────────
   Droplet: ({ size = 18 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

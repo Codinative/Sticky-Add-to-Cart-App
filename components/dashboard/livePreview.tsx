@@ -95,10 +95,9 @@ export function LivePreview({ config, previewDevice }: { config: any, previewDev
   
     const visibleElements = config.elements.filter((el: { id: string, visible: boolean }) => el.visible);
 
-    // Split elements into left (info) and right (action) groups
-    const LEFT_IDS = new Set(["image", "title", "price"]);
-    const leftElements = visibleElements.filter((el: { id: string }) => LEFT_IDS.has(el.id));
-    const rightElements = visibleElements.filter((el: { id: string }) => !LEFT_IDS.has(el.id));
+    // Split elements into left and right groups based on the group property set by the user
+    const leftElements = visibleElements.filter((el: { id: string; group?: string }) => (el.group ?? "left") === "left");
+    const rightElements = visibleElements.filter((el: { id: string; group?: string }) => (el.group ?? "left") !== "left");
 
     // Button style computation
     const getButtonStyle = (): React.CSSProperties => {
