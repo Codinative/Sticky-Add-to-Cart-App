@@ -928,7 +928,13 @@
     // Build visible elements
     var visibleElements = (config.elements || []).filter(function (e) { return e.visible; });
 
-    var LEFT_IDS = { image: true, title: true, price: true };
+    // Fallback for configs saved before group property was added
+    var DEFAULT_LEFT_IDS = { image: true, title: true, price: true };
+
+    function isLeftGroup(elem) {
+      if (elem.group) return elem.group === "left";
+      return !!DEFAULT_LEFT_IDS[elem.id];
+    }
 
     function renderElementNode(elem) {
       switch (elem.id) {
@@ -952,7 +958,7 @@
       visibleElements.forEach(function (elem) {
         var node = renderElementNode(elem);
         if (!node) return;
-        if (LEFT_IDS[elem.id]) {
+        if (isLeftGroup(elem)) {
           leftNodes.push(node);
         } else {
           rightNodes.push(node);

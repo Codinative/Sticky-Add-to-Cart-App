@@ -22,7 +22,7 @@ const SessionProviderInner = ({ children }: { children: ReactNode }) => {
 
 const SessionProvider = ({ children }: { children: ReactNode }) => {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div></div>}>
       <SessionProviderInner>{children}</SessionProviderInner>
     </Suspense>
   );

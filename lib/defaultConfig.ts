@@ -72,12 +72,12 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
     // Layout
     position: "bottom",
     elements: [
-      { id: "image", label: "Product Image", visible: true },
-      { id: "title", label: "Product Title", visible: true },
-      { id: "price", label: "Price", visible: true },
-      { id: "variants", label: "Variant Selector", visible: true },
-      { id: "quantity", label: "Quantity Picker", visible: true },
-      { id: "button", label: "Add to Cart Button", visible: true },
+      { id: "image", label: "Product Image", visible: true, group: "left" as const },
+      { id: "title", label: "Product Title", visible: true, group: "left" as const },
+      { id: "price", label: "Price", visible: true, group: "left" as const },
+      { id: "variants", label: "Variant Selector", visible: true, group: "right" as const },
+      { id: "quantity", label: "Quantity Picker", visible: true, group: "right" as const },
+      { id: "button", label: "Add to Cart Button", visible: true, group: "right" as const },
     ],
     elementGap: 12,
     groupGap: 32,
