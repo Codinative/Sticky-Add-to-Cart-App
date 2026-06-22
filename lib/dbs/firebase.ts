@@ -1,4 +1,5 @@
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { randomUUID } from 'crypto';
 import { SessionProps } from '../../types';
 import { StickyBarConfig } from '@/types/config';
@@ -11,9 +12,9 @@ const {
 } = process.env;
 
 // Initialize Firebase Admin (only once)
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
       projectId: FIRE_ADMIN_PROJECT_ID,
       clientEmail: FIRE_ADMIN_CLIENT_EMAIL,
       privateKey: FIRE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
@@ -21,7 +22,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 export async function setUser ({ user }: SessionProps, storeHash: string) {
   if (!user || !storeHash) return null;
@@ -34,7 +35,7 @@ export async function setUser ({ user }: SessionProps, storeHash: string) {
   if (!docSnap.exists) {
     await ref.set({ email, username, stores: [storeHash] });
   } else {
-    await ref.update({ email, username: username || null, stores: admin.firestore.FieldValue.arrayUnion(storeHash) });
+    await ref.update({ email, username: username || null, stores: FieldValue.arrayUnion(storeHash) });
   }
 }
  
@@ -95,7 +96,7 @@ export async function deleteUser(userId: string, storeHash: string) {
   // Ensure we're removing the correct hash
   try {
     await userRef.update({
-      stores: admin.firestore.FieldValue.arrayRemove(storeHash),
+      stores: FieldValue.arrayRemove(storeHash),
     });
   } catch (error) {
     return null;
