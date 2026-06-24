@@ -306,7 +306,7 @@ export default function PreviewPage() {
           <div className="flex flex-col items-center justify-start p-4 sm:p-6 min-w-max">
             <div className="bg-slate-900 rounded-[44px] p-3 shadow-2xl">
               <div className="rounded-[36px] overflow-hidden" style={{ width: "390px", height: "760px", display: "flex", flexDirection: "column" }}>
-                {/* Mobile status bar — outside iframe so fixed bar in iframe starts below it */}
+                {/* Mobile status bar - outside iframe so fixed bar in iframe starts below it */}
                 <div style={{ background: "#fff", padding: "8px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
                   <span style={{ fontSize: "12px", fontWeight: 700, color: "#111" }}>9:41</span>
                   <div style={{ width: "18px", height: "11px", border: "2px solid #111", borderRadius: "3px", position: "relative" }}>
@@ -314,13 +314,13 @@ export default function PreviewPage() {
                     <div style={{ position: "absolute", right: "-4px", top: "50%", transform: "translateY(-50%)", width: "2px", height: "5px", background: "#9ca3af", borderRadius: "0 1px 1px 0" }} />
                   </div>
                 </div>
-                {/* Mobile URL bar — outside iframe */}
+                {/* Mobile URL bar - outside iframe */}
                 <div style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb", padding: "6px 10px", flexShrink: 0 }}>
                   <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "5px 10px", fontSize: "11px", color: "#9ca3af", textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     yourstore.mybigcommerce.com/product
                   </div>
                 </div>
-                {/* Website content iframe — fixed bar at top:0 lands correctly below the chrome above */}
+                {/* Website content iframe - fixed bar at top:0 lands correctly below the chrome above */}
                 <iframe
                   srcDoc={srcdoc}
                   style={{ width: "100%", flex: 1, border: "none", display: "block", minHeight: 0 }}
@@ -335,7 +335,7 @@ export default function PreviewPage() {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-          {/* Desktop fake browser chrome — outside iframe so fixed bar in iframe starts below it */}
+          {/* Desktop fake browser chrome - outside iframe so fixed bar in iframe starts below it */}
           <div style={{ background: "#f3f4f6", borderBottom: "1px solid #e5e7eb", padding: "10px 16px", display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
             <div style={{ display: "flex", gap: "6px" }}>
               <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#EF4444" }} />
@@ -346,7 +346,7 @@ export default function PreviewPage() {
               yourstore.mybigcommerce.com/premium-wireless-headphones
             </div>
           </div>
-          {/* Website content iframe — fixed bar at top:0 lands correctly below the chrome above */}
+          {/* Website content iframe - fixed bar at top:0 lands correctly below the chrome above */}
           <iframe
             srcDoc={srcdoc}
             style={{ flex: 1, border: "none", width: "100%", display: "block", minHeight: 0 }}

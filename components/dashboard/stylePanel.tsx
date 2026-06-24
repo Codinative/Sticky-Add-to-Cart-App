@@ -67,10 +67,10 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
               onChange={(v) => updateConfig("barShadow", v)}
               options={[
                 { value: "none", label: "None" },
-                { value: "sm", label: "Small — Subtle depth" },
-                { value: "md", label: "Medium — Standard depth" },
-                { value: "lg", label: "Large — Prominent depth" },
-                { value: "xl", label: "Extra Large — Maximum depth" },
+                { value: "sm", label: "Small - Subtle depth" },
+                { value: "md", label: "Medium - Standard depth" },
+                { value: "lg", label: "Large - Prominent depth" },
+                { value: "xl", label: "Extra Large - Maximum depth" },
               ]}
             />
 

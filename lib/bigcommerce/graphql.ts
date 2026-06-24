@@ -224,7 +224,7 @@ function processGraphQLProduct(gqlProduct: any): ProcessedProduct {
         }
     }
 
-    // Process variants — build variantKey, price, and optionsIds
+    // Process variants - build variantKey, price, and optionsIds
     // Same pattern as reference code's processProductVariants
     if (gqlProduct.variants?.edges) {
         for (const variantEdge of gqlProduct.variants.edges) {

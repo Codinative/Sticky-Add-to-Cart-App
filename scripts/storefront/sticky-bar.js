@@ -189,7 +189,7 @@
 
   /**
    * Fetch product data via our GraphQL proxy API.
-   * Sends the current page path — the server determines if this is a product
+   * Sends the current page path - the server determines if this is a product
    * page and returns the product data using BigCommerce's GraphQL route(path:) query.
    * Returns { isProductPage: boolean, product: object|null }
    */
@@ -1227,7 +1227,7 @@
         }
       }
     } catch (e) {
-      // DOMParser not available or parsing failed — ignore
+      // DOMParser not available or parsing failed - ignore
     }
     return null;
   }
@@ -1481,7 +1481,7 @@
   // Start config fetch IMMEDIATELY (no DOM dependency, may resolve from cache)
   var configPromise = fetchConfig();
 
-  // Start product/route fetch IMMEDIATELY — sends the current page path
+  // Start product/route fetch IMMEDIATELY - sends the current page path
   // to our proxy which determines page type via BigCommerce GraphQL
   var productPromise = fetchProductByPath(window.location.pathname);
 
@@ -1502,7 +1502,7 @@
         var nestedConfig = results[0];
         var productResult = results[1]; // { isProductPage, product }
 
-        // Not a product page — nothing to render
+        // Not a product page - nothing to render
         if (!productResult || !productResult.isProductPage || !productResult.product) return;
 
         // No config available

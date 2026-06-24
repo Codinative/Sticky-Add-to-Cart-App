@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
             path
         );
 
-        // Not a product page — return early
+        // Not a product page - return early
         if (!result.isProductPage) {
             return NextResponse.json(
                 { isProductPage: false, product: null },
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // Product page — return full product data
+        // Product page - return full product data
         return NextResponse.json(
             { isProductPage: true, product: result.product },
             {
