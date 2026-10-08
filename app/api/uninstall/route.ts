@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBCVerify, removeSession } from '../../../lib/auth';
-import { getStoreToken } from '@/lib/dbs/firebase';
+import { deleteStickyBarConfig, getStoreToken } from '@/lib/dbs/firebase';
 import { deleteStoreScript } from '@/lib/bigcommerce/scripts';
  
 export async function GET (req: NextRequest) {
@@ -24,6 +24,14 @@ export async function GET (req: NextRequest) {
             } catch (scriptError: any) {
                 // Non-blocking: auto_uninstall flag is the safety net
                 console.warn('Script deletion failed during app uninstall:', scriptError.message);
+            }
+
+            // Delete the bar config. Firestore does not remove subcollections when the
+            // parent store doc is deleted, so stores/{storeHash}/stickyBar/config would
+            // otherwise be left behind. Non-blocking: store/user cleanup must still run.
+            const configDeleted = await deleteStickyBarConfig(storeHash);
+            if (!configDeleted) {
+                console.warn('Sticky bar config deletion failed during app uninstall:', storeHash);
             }
         }
 

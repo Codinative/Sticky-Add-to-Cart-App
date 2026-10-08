@@ -64,6 +64,12 @@ export interface DefaultStickyBarConfig {
     quantityBgColor: string;
     quantityButtonColor: string;
 
+    // Total Price (unit price × quantity)
+    showTotalPrice: boolean;
+    totalPriceLabel: string;
+    totalPriceColor: string;
+    totalPriceFontWeight: string;
+
     // Layout
     position: "top" | "bottom" | "left" | "right";
     elements: Element[];
@@ -112,6 +118,7 @@ interface StylingConfig {
     imageStyling: ImageStylingConfig;
     variantStyling: VariantStylingConfig;
     quantityStyling: QuantityStylingConfig;
+    totalPriceStyling: TotalPriceStylingConfig;
 }
 
 interface LayoutConfig {
@@ -197,6 +204,13 @@ interface QuantityStylingConfig {
     textColor: string;
     bgColor: string;
     buttonColor: string;
+}
+
+interface TotalPriceStylingConfig {
+    enabled: boolean;
+    label: string;
+    color: string;
+    fontWeight: string;
 }
 
 // ─── Layout Sub-configs ────────────────────────────────────────

@@ -74,8 +74,31 @@ export function LayoutPanel({ config, updateConfig }: { config: any, updateConfi
               min={0}
               max={1800}
             />
-            <p className="text-xs text-gray-400 -mt-3">
-              Constrains the inner content width within the bar. Set to 0 for no limit (content stretches to fill the bar).
+            {/* Quick presets matching common theme container widths */}
+            <div className="flex flex-wrap gap-1.5 -mt-2">
+              {[
+                { value: 0, label: "None" },
+                { value: 1140, label: "1140" },
+                { value: 1200, label: "1200" },
+                { value: 1280, label: "1280" },
+                { value: 1400, label: "1400" },
+                { value: 1600, label: "1600" },
+              ].map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => updateConfig("contentMaxWidth", preset.value)}
+                  className={`px-2.5 py-1 rounded-md border text-xs font-medium transition-colors ${
+                    (config.contentMaxWidth ?? 0) === preset.value
+                      ? "border-slate-900 bg-slate-50 text-slate-900"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400">
+              Keeps the bar background full width but limits the inner content, like a theme section container. Match your theme&apos;s container width to align with other sections. 0 / None = content stretches to fill the bar.
             </p>
 
             <div className="border-t border-gray-100 pt-4" />

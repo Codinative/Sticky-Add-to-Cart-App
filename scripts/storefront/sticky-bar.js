@@ -70,6 +70,7 @@
     var is = s.imageStyling || {};
     var vs = s.variantStyling || {};
     var qs = s.quantityStyling || {};
+    var tp = s.totalPriceStyling || {};
     var ea = l.elementArrangement || {};
     var po = l.position || {};
     var bw = l.barWidth || {};
@@ -121,8 +122,8 @@
       imageBorderColor: is.borderColor || "#E5E7EB",
       imageBorderWidth: is.borderWidth || 0,
       variantOptions: vs.options || [
-        { name: "Size", displayType: "rectangleList" },
-        { name: "Color", displayType: "swatch" },
+        { name: "Size", displayType: "dropdown" },
+        { name: "Color", displayType: "dropdown" },
       ],
       variantShowLabels: vs.showLabels !== undefined ? vs.showLabels : true,
       variantActiveColor: vs.activeColor || "#2563EB",
@@ -135,6 +136,10 @@
       quantityTextColor: qs.textColor || "#374151",
       quantityBgColor: qs.bgColor || "#FFFFFF",
       quantityButtonColor: qs.buttonColor || "#9CA3AF",
+      showTotalPrice: tp.enabled !== undefined ? tp.enabled : true,
+      totalPriceLabel: tp.label !== undefined ? tp.label : "Total:",
+      totalPriceColor: tp.color || "#1F2937",
+      totalPriceFontWeight: tp.fontWeight || "700",
       position: po.position || "bottom",
       elements: ea.elements || [
         { id: "image", label: "Product Image", visible: true },
@@ -149,7 +154,7 @@
       barOffset: sp.barOffset || 0,
       barWidthMode: bw.mode || "full",
       barMaxWidth: bw.maxWidth || 1200,
-      contentMaxWidth: bw.contentMaxWidth !== undefined ? bw.contentMaxWidth : 0,
+      contentMaxWidth: bw.contentMaxWidth !== undefined ? bw.contentMaxWidth : 1400,
       contentAlignment: bw.contentAlignment || "spaceBetween",
       verticalAlignment: bw.verticalAlignment || "center",
       triggerMode: di.triggerMode || "scroll",
@@ -391,6 +396,19 @@
     return svg;
   }
 
+  // Native arrows are hidden (appearance: none), so overlay a chevron on the
+  // select's right padding. pointer-events: none keeps clicks on the select.
+  function addSelectArrow(wrapper, color) {
+    var arrow = svgIcon("chevron-down");
+    arrow.style.position = "absolute";
+    arrow.style.right = "8px";
+    arrow.style.top = "50%";
+    arrow.style.transform = "translateY(-50%)";
+    arrow.style.pointerEvents = "none";
+    arrow.style.color = color;
+    wrapper.appendChild(arrow);
+  }
+
   // ─── Render Elements ───────────────────────────────────────────
 
   function renderImage() {
@@ -485,6 +503,38 @@
       }
     }
 
+    // Total price (unit price × quantity) on the same line, after the price
+    if (config.showTotalPrice) container.appendChild(renderTotalPrice());
+
+    return container;
+  }
+
+  // ─── Total Price (unit price × quantity) ────────────────────────
+
+  function getTotalPrice() {
+    var unitPrice = currentPrice != null ? currentPrice : product.prices.price;
+    if (unitPrice == null) return null;
+    return Number(unitPrice) * quantity;
+  }
+
+  function renderTotalPrice() {
+    var baseFontSize = config.fontSize || 14;
+    var container = el("span", {
+      id: BAR_ID + "-total",
+      style: {
+        marginLeft: "16px",
+        fontFamily: config.fontFamily,
+        fontSize: baseFontSize + "px",
+        color: config.totalPriceColor,
+      },
+    });
+    if (config.totalPriceLabel) {
+      container.appendChild(el("span", null, config.totalPriceLabel + " "));
+    }
+    container.appendChild(el("span", {
+      id: BAR_ID + "-total-value",
+      style: { fontWeight: config.totalPriceFontWeight || "700" },
+    }, formatPrice(getTotalPrice())));
     return container;
   }
 
@@ -507,7 +557,7 @@
     var select = el("select", {
       "data-variant-name": optionName,
       style: {
-        padding: "4px 24px 4px 8px",
+        padding: "4px 26px 4px 8px",
         fontSize: Math.max((config.fontSize || 14) - 2, 11) + "px",
         border: "1px solid " + config.variantBorderColor,
         borderRadius: config.variantBorderRadius + "px",
@@ -530,6 +580,7 @@
       select.appendChild(opt);
     });
     wrapper.appendChild(select);
+    addSelectArrow(wrapper, config.variantTextColor);
     return wrapper;
   }
 
@@ -668,7 +719,8 @@
   function renderVariants() {
     var container = el("div", {
       id: BAR_ID + "-variants",
-      style: { flexShrink: "0", display: "flex", flexDirection: "column", gap: "6px" },
+      // Options side by side on one row (wraps only if they can't fit)
+      style: { flexShrink: "0", display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: "12px", rowGap: "6px" },
     });
 
     if (!product.variantLabels || Object.keys(product.variantLabels).length === 0) {
@@ -734,7 +786,7 @@
     if (config.quantityStyle === "dropdown") {
       var select = el("select", {
         style: {
-          padding: "4px 24px 4px 8px",
+          padding: "4px 26px 4px 8px",
           fontSize: "12px",
           border: "1px solid " + config.quantityBorderColor,
           borderRadius: config.quantityBorderRadius + "px",
@@ -747,6 +799,7 @@
         },
         onChange: function (e) {
           quantity = parseInt(e.target.value, 10);
+          updateTotalPrice();
         },
       });
       for (var i = 1; i <= 10; i++) {
@@ -754,7 +807,10 @@
         if (i === quantity) opt.selected = true;
         select.appendChild(opt);
       }
-      container.appendChild(select);
+      var selectWrap = el("div", { style: { position: "relative", display: "inline-block" } });
+      selectWrap.appendChild(select);
+      addSelectArrow(selectWrap, qtyBtnColor);
+      container.appendChild(selectWrap);
     } else if (config.quantityStyle === "input") {
       var input = el("input", {
         type: "number",
@@ -774,6 +830,7 @@
         onChange: function (e) {
           var v = parseInt(e.target.value, 10);
           if (v > 0) quantity = v;
+          updateTotalPrice();
         },
       });
       container.appendChild(input);
@@ -792,7 +849,7 @@
       var minusBtn = el("button", {
         style: {
           padding: "4px 8px",
-          fontSize: "12px",
+          fontSize: "22px",
           color: qtyBtnColor,
           background: "none",
           border: "none",
@@ -810,7 +867,7 @@
         id: BAR_ID + "-qty-display",
         style: {
           padding: "4px 12px",
-          fontSize: "12px",
+          fontSize: "16px",
           fontWeight: "500",
           color: qtyTextColor,
           borderLeft: "1px solid " + config.quantityBorderColor,
@@ -821,7 +878,7 @@
       var plusBtn = el("button", {
         style: {
           padding: "4px 8px",
-          fontSize: "12px",
+          fontSize: "22px",
           color: qtyBtnColor,
           background: "none",
           border: "none",
@@ -1098,16 +1155,27 @@
     document.body.appendChild(bar);
   }
 
+  // Below this width the bar switches to the stacked, centered layout
+  // (product info / variants / quantity + button). Never below the mobile breakpoint.
+  var STACKED_LAYOUT_MAX_WIDTH = 940;
+
   function buildCSS() {
+    var stackedMax = Math.max(config && config.mobileBreakpoint || 768, STACKED_LAYOUT_MAX_WIDTH);
     return (
       "#" + BAR_ID + " * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
       "#" + BAR_ID + " button { font-family: inherit; }\n" +
       "#" + BAR_ID + " select { font-family: inherit; }\n" +
       "#" + BAR_ID + " input { font-family: inherit; }\n" +
       "#" + BAR_ID + " img { display: block; }\n" +
-      "@media (max-width: " + (config && config.mobileBreakpoint || 768) + "px) {\n" +
+      "@media (max-width: " + stackedMax + "px) {\n" +
       "  #" + BAR_ID + " .satc-content { justify-content: center !important; flex-wrap: wrap !important; row-gap: " + (config && config.elementGap || 12) + "px !important; }\n" +
-      "  #" + BAR_ID + " .satc-group { flex-wrap: wrap !important; justify-content: center !important; }\n" +
+      // Each group takes a full centered row, so product info always sits above the controls
+      "  #" + BAR_ID + " .satc-group { flex-basis: 100% !important; flex-wrap: wrap !important; justify-content: center !important; }\n" +
+      // Variants get their own centered full-width row;
+      // quantity + Add to Cart always follow on the last row
+      "  #" + BAR_ID + "-variants { flex-basis: 100% !important; justify-content: center !important; order: 0; }\n" +
+      "  #" + BAR_ID + "-variants:empty { display: none !important; }\n" +
+      "  #" + BAR_ID + "-quantity, #" + BAR_ID + "-atc-btn { order: 1; }\n" +
       "}\n"
     );
   }
@@ -1118,6 +1186,7 @@
     selectedVariants[variantName] = value;
     currentPrice = calculateVariantPrice();
     updatePriceDisplay();
+    updateTotalPrice();
     updateVariantDisplay();
   }
 
@@ -1142,6 +1211,12 @@
   function updateQuantityDisplay() {
     var qtyDisplay = document.getElementById(BAR_ID + "-qty-display");
     if (qtyDisplay) qtyDisplay.textContent = String(quantity);
+    updateTotalPrice();
+  }
+
+  function updateTotalPrice() {
+    var totalEl = document.getElementById(BAR_ID + "-total-value");
+    if (totalEl) totalEl.textContent = formatPrice(getTotalPrice());
   }
 
   // ─── Add to Cart ───────────────────────────────────────────────
@@ -1457,6 +1532,48 @@
     }, { passive: true });
   }
 
+  // ─── Dashboard Live Preview ────────────────────────────────────
+  //
+  // The dashboard runs this same script in an iframe (window.__SATC_PREVIEW__ = true)
+  // and posts { type: "satc:config", config: <nested config> } on every settings
+  // change. We re-render in place — keeping selected variants / quantity — and show
+  // the bar immediately, skipping triggers and entry animations. Real storefronts
+  // never set the flag, so none of this runs there.
+
+  var IS_LIVE_PREVIEW = window.__SATC_PREVIEW__ === true;
+
+  function revealBarInstantly() {
+    var bar = document.getElementById(BAR_ID);
+    if (!bar) return;
+    if (isMobile() && !config.showOnMobile) return;
+    bar.style.transition = "none";
+    bar.style.transform = config.position === "left" || config.position === "right"
+      ? "translateY(-50%)" : "translateY(0)";
+    bar.style.opacity = "1";
+    bar.style.visibility = "visible";
+    barVisible = true;
+    applyBodyPadding();
+  }
+
+  function applyPreviewConfig(nestedConfig) {
+    config = flattenConfig(nestedConfig);
+    if (!product) return; // init() renders once the product resolves
+    removeBodyPadding();
+    _bodyPaddingOriginal = null;
+    barVisible = false;
+    renderBar();
+    revealBarInstantly();
+  }
+
+  if (IS_LIVE_PREVIEW) {
+    window.addEventListener("message", function (e) {
+      if (e.source !== window.parent) return;
+      var data = e.data;
+      if (!data || data.type !== "satc:config" || !data.config) return;
+      applyPreviewConfig(data.config);
+    });
+  }
+
   // ─── Initialization ────────────────────────────────────────────
   //
   // Strategy: No client-side product page detection needed.
@@ -1508,14 +1625,22 @@
         // No config available
         if (!nestedConfig) return;
 
-        config = flattenConfig(nestedConfig);
-        if (!config.enabled) return;
+        // A live-preview config may have arrived while the fetches were in flight
+        if (!config) config = flattenConfig(nestedConfig);
 
         product = productResult.product;
 
         // Initialize variant state
         initSelectedVariants();
         currentPrice = calculateVariantPrice();
+
+        if (IS_LIVE_PREVIEW) {
+          renderBar();
+          revealBarInstantly();
+          return;
+        }
+
+        if (!config.enabled) return;
 
         // Render the bar
         renderBar();

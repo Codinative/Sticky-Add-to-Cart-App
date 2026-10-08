@@ -42,8 +42,10 @@ Called when the merchant opens the app inside the BC admin.
 
 - **Query**: `signed_payload_jwt`.
 - **Does**: `getBCVerify` → fetch the store's access token → `deleteStoreScript`
-  (**before** removing the store doc) → `removeSession` (delete store doc; remove store
-  from the user, deleting the user if it has no stores left).
+  (**before** removing the store doc) → `deleteStickyBarConfig` (Firestore does not
+  cascade-delete the `stickyBar` subcollection; failure is logged, not fatal) →
+  `removeSession` (delete store doc; remove store from the user, deleting the user if it
+  has no stores left).
 - **Response**: `200 {}`.
 - Source: [app/api/uninstall/route.ts](../app/api/uninstall/route.ts).
 

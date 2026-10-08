@@ -52,8 +52,8 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
 
     // Variant Styling
     variantOptions: [
-      { name: "Size", displayType: "rectangleList" },
-      { name: "Color", displayType: "swatch" },
+      { name: "Size", displayType: "dropdown" },
+      { name: "Color", displayType: "dropdown" },
     ],
     variantShowLabels: true,
     variantActiveColor: "#2563EB",
@@ -68,6 +68,12 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
     quantityTextColor: "#374151",
     quantityBgColor: "#FFFFFF",
     quantityButtonColor: "#9CA3AF",
+
+    // Total Price (unit price × quantity)
+    showTotalPrice: true,
+    totalPriceLabel: "Total:",
+    totalPriceColor: "#1F2937",
+    totalPriceFontWeight: "700",
 
     // Layout
     position: "bottom",
@@ -84,7 +90,7 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
     barOffset: 0,
     barWidthMode: "full",
     barMaxWidth: 1200,
-    contentMaxWidth: 0,
+    contentMaxWidth: 1400,
     contentAlignment: "spaceBetween",
     verticalAlignment: "center",
 

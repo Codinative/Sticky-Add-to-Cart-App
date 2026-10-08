@@ -317,7 +317,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
                         updated[idx] = { ...updated[idx], name: e.target.value };
                         updateConfig("variantOptions", updated);
                       }}
-                      className="flex-1 min-w-0 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
+                      className="flex-1 min-w-0 px-2.5 py-1.5 text-sm text-gray-700 placeholder:text-gray-400 border border-gray-200 rounded-lg bg-white hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
                     />
                     <select
                       value={opt.displayType}
@@ -326,7 +326,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
                         updated[idx] = { ...updated[idx], displayType: e.target.value };
                         updateConfig("variantOptions", updated);
                       }}
-                      className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
+                      className="px-2.5 py-1.5 text-sm text-gray-700 border border-gray-200 rounded-lg bg-white hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
                     >
                       <option value="dropdown">Dropdown</option>
                       <option value="swatch">Swatch</option>
@@ -386,6 +386,45 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
             <ColorPicker label="Button / Icon Color" value={config.quantityButtonColor} onChange={(v) => updateConfig("quantityButtonColor", v)} />
             <ColorPicker label="Border Color" value={config.quantityBorderColor} onChange={(v) => updateConfig("quantityBorderColor", v)} />
             <RangeSlider label="Border Radius" value={config.quantityBorderRadius} onChange={(v) => updateConfig("quantityBorderRadius", v)} max={16} />
+          </div>
+        </SectionCard>
+
+        {/* ─── Total Price ───────────────────────────────────── */}
+        <SectionCard title="Total Price" icon={<Icons.ShoppingCart size={16} />} defaultOpen={false}>
+          <div className="space-y-5">
+            <Toggle
+              checked={config.showTotalPrice}
+              onChange={(v) => updateConfig("showTotalPrice", v)}
+              label="Show Total Price"
+              description="Display price × selected quantity below the product price"
+            />
+            {config.showTotalPrice && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Label</label>
+                  <input
+                    type="text"
+                    value={config.totalPriceLabel}
+                    onChange={(e) => updateConfig("totalPriceLabel", e.target.value)}
+                    placeholder="Total:"
+                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-gray-300 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition-colors"
+                  />
+                </div>
+                <ColorPicker label="Text Color" value={config.totalPriceColor} onChange={(v) => updateConfig("totalPriceColor", v)} />
+                <SelectField
+                  label="Amount Font Weight"
+                  value={config.totalPriceFontWeight}
+                  onChange={(v) => updateConfig("totalPriceFontWeight", v)}
+                  options={[
+                    { value: "400", label: "Normal" },
+                    { value: "500", label: "Medium" },
+                    { value: "600", label: "Semibold" },
+                    { value: "700", label: "Bold" },
+                    { value: "800", label: "Extra Bold" },
+                  ]}
+                />
+              </>
+            )}
           </div>
         </SectionCard>
       </div>

@@ -70,6 +70,12 @@ export function flattenToNestedConfig(config: DefaultStickyBarConfig): StickyBar
         bgColor: config.quantityBgColor,
         buttonColor: config.quantityButtonColor,
       },
+      totalPriceStyling: {
+        enabled: config.showTotalPrice,
+        label: config.totalPriceLabel,
+        color: config.totalPriceColor,
+        fontWeight: config.totalPriceFontWeight,
+      },
     },
     layout: {
       elementArrangement: {
@@ -192,6 +198,12 @@ export function nestedToFlattenConfig(nested: StickyBarConfig): DefaultStickyBar
     quantityTextColor: nested.styling?.quantityStyling?.textColor ?? d.quantityTextColor,
     quantityBgColor: nested.styling?.quantityStyling?.bgColor ?? d.quantityBgColor,
     quantityButtonColor: nested.styling?.quantityStyling?.buttonColor ?? d.quantityButtonColor,
+
+    // Total Price
+    showTotalPrice: nested.styling?.totalPriceStyling?.enabled ?? d.showTotalPrice,
+    totalPriceLabel: nested.styling?.totalPriceStyling?.label ?? d.totalPriceLabel,
+    totalPriceColor: nested.styling?.totalPriceStyling?.color ?? d.totalPriceColor,
+    totalPriceFontWeight: nested.styling?.totalPriceStyling?.fontWeight ?? d.totalPriceFontWeight,
 
     // Layout
     position: nested.layout?.position?.position ?? d.position,

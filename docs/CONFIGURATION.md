@@ -89,7 +89,7 @@ Stored at Firestore path `stores/{storeHash}/stickyBar/config` (the nested form)
 
 | Flat key | Nested key | Type | Default | Notes |
 |----------|-----------|------|---------|-------|
-| `variantOptions` | `options` | `VariantOptionConfig[]` | `[{Size, rectangleList}, {Color, swatch}]` | Per-option display type; see below |
+| `variantOptions` | `options` | `VariantOptionConfig[]` | `[{Size, dropdown}, {Color, dropdown}]` | Per-option display type; see below |
 | `variantShowLabels` | `showLabels` | boolean | `true` | Show `Size:` / `Color:` labels |
 | `variantActiveColor` | `activeColor` | hex | `#2563EB` | Selected value highlight |
 | `variantBorderColor` | `borderColor` | hex | `#E5E7EB` | |
@@ -111,6 +111,19 @@ option display name **case-insensitively**; unconfigured options default to
 | `quantityButtonColor` | `buttonColor` | hex | `#9CA3AF` | `+` / `−` icon color |
 | `quantityBorderColor` | `borderColor` | hex | `#E5E7EB` | |
 | `quantityBorderRadius` | `borderRadius` | number px | `8` | 0–16 |
+
+### Total Price → `styling.totalPriceStyling`
+
+Shows `unit price × selected quantity` inside the `price` element, on the same
+line after the price (16px gap). Updates live on `+` / `−`, quantity input/dropdown, and variant change.
+Hidden if the `price` element itself is hidden.
+
+| Flat key | Nested key | Type | Default | Notes |
+|----------|-----------|------|---------|-------|
+| `showTotalPrice` | `enabled` | boolean | `true` | |
+| `totalPriceLabel` | `label` | string | `Total:` | Empty string = amount only |
+| `totalPriceColor` | `color` | hex | `#1F2937` | Label + amount color |
+| `totalPriceFontWeight` | `fontWeight` | string | `700` | Amount weight |
 
 ---
 
@@ -138,7 +151,7 @@ is render order within each group.
 |----------|-----------|------|---------|-------|
 | `barWidthMode` | `mode` | `full` \| `contained` | `full` | |
 | `barMaxWidth` | `maxWidth` | number px | `1200` | Used when `contained`; 600–1800 |
-| `contentMaxWidth` | `contentMaxWidth` | number px | `0` | Inner content cap; 0 = no limit |
+| `contentMaxWidth` | `contentMaxWidth` | number px | `1400` | Inner content cap (bar background stays full width); 0 = no limit. Dashboard presets: None, 1140, 1200, 1280, 1400, 1600 |
 | `contentAlignment` | `contentAlignment` | `start`\|`center`\|`end`\|`spaceBetween`\|`spaceAround`\|`spaceEvenly` | `spaceBetween` | Horizontal distribution |
 | `verticalAlignment` | `verticalAlignment` | `top` \| `center` \| `bottom` | `center` | |
 

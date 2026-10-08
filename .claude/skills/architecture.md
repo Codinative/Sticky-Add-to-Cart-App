@@ -22,7 +22,7 @@ app/
   api/                     Route handlers (all server-side). Full reference: docs/API.md
     auth/                  OAuth install: token exchange → setSession → default config → install script
     load/                  App launch: verify signed JWT → refresh session → redirect to dashboard
-    uninstall/             Uninstall webhook: delete script → remove store + user docs
+    uninstall/             Uninstall webhook: delete script → delete config → remove store + user docs
     config/                Dashboard config CRUD (session-gated)
     bc-scripts/            Manage the BC Scripts API tag (session-gated)
     products/             /catalog/summary passthrough (session-gated)
@@ -79,6 +79,7 @@ UNINSTALL GET /api/uninstall?signed_payload_jwt=…
   getBCVerify
   deleteStoreScript           delete the script BEFORE removing the store doc
                               (the doc holds the accessToken). auto_uninstall is the backstop.
+  deleteStickyBarConfig       subcollections aren't cascade-deleted with the store doc
   removeSession               delete store doc + remove store from user (delete user if empty)
 ```
 

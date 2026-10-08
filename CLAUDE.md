@@ -39,7 +39,7 @@ DASHBOARD (admin iframe, JWT `context` in URL)
 
 INSTALL  GET /api/auth   → OAuth → setStore/setUser → save default config → install script
 LOAD     GET /api/load   → verify signed JWT → refresh session → redirect to dashboard
-UNINSTALL GET /api/uninstall → delete script → remove store + user docs
+UNINSTALL GET /api/uninstall → delete script → delete bar config → remove store + user docs
 
 STOREFRONT (sticky-bar.min.js?sid={uniqueStoreId}&app={BASE_URL})
   GET /api/storefront/config?sid=…           → bar config (CORS *, no-cache)
@@ -100,7 +100,10 @@ changes via `/preview` (it loads the real `sticky-bar.min.js`) or on a real stor
 
 - **Rebuild after editing the storefront script.** `public/sticky-bar.min.js` is what
   stores load; editing `scripts/storefront/sticky-bar.js` alone changes nothing until
-  `npm run build:storefront` runs and the new file is deployed.
+  `npm run build:storefront` runs and the new file is deployed. The dashboard live
+  preview and `/preview` also run this built file (iframe built by
+  [lib/previewSrcdoc.ts](lib/previewSrcdoc.ts); live settings arrive via
+  `postMessage` when `window.__SATC_PREVIEW__` is set), so rebuild to see changes there too.
 - **Two flatten implementations.** `lib/configConverter.ts` (dashboard) and
   `flattenConfig` in `sticky-bar.js` (storefront) must agree. Update both.
 - **`.env` holds a Firebase admin private key + the BC client secret** — never print,

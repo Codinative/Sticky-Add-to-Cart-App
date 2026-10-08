@@ -225,8 +225,9 @@ export async function deleteStickyBarConfig(storeHash: string) {
   try {
     const ref = db.collection('stores').doc(storeHash).collection('stickyBar').doc('config');
     await ref.delete();
-    return;
+    return ref.id;
   } catch (error) {
+    console.error('Error deleting sticky bar config:', error);
     return null;
   }
 }
