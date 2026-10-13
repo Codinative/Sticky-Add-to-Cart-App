@@ -70,12 +70,6 @@ export function flattenToNestedConfig(config: DefaultStickyBarConfig): StickyBar
         bgColor: config.quantityBgColor,
         buttonColor: config.quantityButtonColor,
       },
-      totalPriceStyling: {
-        enabled: config.showTotalPrice,
-        label: config.totalPriceLabel,
-        color: config.totalPriceColor,
-        fontWeight: config.totalPriceFontWeight,
-      },
     },
     layout: {
       elementArrangement: {
@@ -100,6 +94,7 @@ export function flattenToNestedConfig(config: DefaultStickyBarConfig): StickyBar
     behavior: {
       display: {
         enabled: config.enabled,
+        showOnDesktop: config.showOnDesktop,
         triggerMode: config.triggerMode,
         triggerDelay: config.triggerDelay,
         scrollThreshold: config.scrollThreshold,
@@ -111,6 +106,7 @@ export function flattenToNestedConfig(config: DefaultStickyBarConfig): StickyBar
       },
       cartBehavior: {
         action: config.cartAction,
+        redirectOnSuccess: config.redirectOnSuccess,
         showSuccessNotification: config.showSuccessNotification,
         successMessage: config.successMessage,
       },
@@ -133,9 +129,12 @@ export function flattenToNestedConfig(config: DefaultStickyBarConfig): StickyBar
  */
 export function nestedToFlattenConfig(nested: StickyBarConfig): DefaultStickyBarConfig {
   const d = defaultStickyBarConfig;
+  // The old "Enable Sticky Bar" switch was replaced by the Visibility toggles:
+  // a store saved with it off loads with both devices off, and `enabled` resets to true.
+  const legacyOff = nested.behavior?.display?.enabled === false;
   return {
     // Display
-    enabled: nested.behavior?.display?.enabled ?? d.enabled,
+    enabled: true,
 
     // Bar Appearance
     barBgColor: nested.styling?.barAppearance?.background ?? d.barBgColor,
@@ -199,12 +198,6 @@ export function nestedToFlattenConfig(nested: StickyBarConfig): DefaultStickyBar
     quantityBgColor: nested.styling?.quantityStyling?.bgColor ?? d.quantityBgColor,
     quantityButtonColor: nested.styling?.quantityStyling?.buttonColor ?? d.quantityButtonColor,
 
-    // Total Price
-    showTotalPrice: nested.styling?.totalPriceStyling?.enabled ?? d.showTotalPrice,
-    totalPriceLabel: nested.styling?.totalPriceStyling?.label ?? d.totalPriceLabel,
-    totalPriceColor: nested.styling?.totalPriceStyling?.color ?? d.totalPriceColor,
-    totalPriceFontWeight: nested.styling?.totalPriceStyling?.fontWeight ?? d.totalPriceFontWeight,
-
     // Layout
     position: nested.layout?.position?.position ?? d.position,
     elements: (nested.layout?.elementArrangement?.elements ?? d.elements).map((el: { id: string; label: string; visible: boolean; group?: "left" | "right" }) => ({
@@ -231,10 +224,12 @@ export function nestedToFlattenConfig(nested: StickyBarConfig): DefaultStickyBar
 
     // Behavior - Cart
     cartAction: nested.behavior?.cartBehavior?.action ?? d.cartAction,
+    redirectOnSuccess: nested.behavior?.cartBehavior?.redirectOnSuccess ?? d.redirectOnSuccess,
     showSuccessNotification: nested.behavior?.cartBehavior?.showSuccessNotification ?? d.showSuccessNotification,
     successMessage: nested.behavior?.cartBehavior?.successMessage ?? d.successMessage,
     // Behavior - Mobile
-    showOnMobile: nested.behavior?.mobile?.enabled ?? d.showOnMobile,
+    showOnDesktop: legacyOff ? false : nested.behavior?.display?.showOnDesktop ?? d.showOnDesktop,
+    showOnMobile: legacyOff ? false : nested.behavior?.mobile?.enabled ?? d.showOnMobile,
     mobileCompact: nested.behavior?.mobile?.compactMode ?? d.mobileCompact,
     mobileBreakpoint: nested.behavior?.mobile?.breakpoint ?? d.mobileBreakpoint,
 

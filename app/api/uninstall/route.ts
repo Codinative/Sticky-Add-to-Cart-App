@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBCVerify, removeSession } from '../../../lib/auth';
 import { deleteStickyBarConfig, getStoreToken } from '@/lib/dbs/firebase';
+import { cancelStoreSubscription } from '@/lib/billing';
 import { deleteStoreScript } from '@/lib/bigcommerce/scripts';
  
 export async function GET (req: NextRequest) {
@@ -32,6 +33,14 @@ export async function GET (req: NextRequest) {
             const configDeleted = await deleteStickyBarConfig(storeHash);
             if (!configDeleted) {
                 console.warn('Sticky bar config deletion failed during app uninstall:', storeHash);
+            }
+
+            // Stop billing the merchant. Non-blocking; the webhook then marks the
+            // billing record as canceled (the record itself is kept, see types/billing.ts).
+            try {
+                await cancelStoreSubscription(storeHash);
+            } catch (billingError: any) {
+                console.error('Stripe subscription cancel failed during app uninstall:', storeHash, billingError.message);
             }
         }
 

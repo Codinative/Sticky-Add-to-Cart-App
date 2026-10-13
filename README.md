@@ -132,6 +132,7 @@ Copy [.env.example](.env.example) and fill it in. All variables:
 | `FIRE_ADMIN_PROJECT_ID` | yes | Firebase service-account project ID |
 | `FIRE_ADMIN_CLIENT_EMAIL` | yes | Firebase service-account client email |
 | `FIRE_ADMIN_PRIVATE_KEY` | yes | Firebase service-account private key (`\n` newlines are unescaped at runtime) |
+| `NEXT_PUBLIC_REVIEW_URL` | no | App Marketplace review link for the dashboard's "Leave us a review" button (hidden in production while empty). Inlined at build time — redeploy after changing |
 | `API_URL` | no | Override the BigCommerce API base (used **only** with `LOGIN_URL`, for non-prod BC environments) |
 | `LOGIN_URL` | no | Override the BigCommerce login base (used **only** with `API_URL`) |
 

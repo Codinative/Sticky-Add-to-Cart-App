@@ -70,7 +70,6 @@
     var is = s.imageStyling || {};
     var vs = s.variantStyling || {};
     var qs = s.quantityStyling || {};
-    var tp = s.totalPriceStyling || {};
     var ea = l.elementArrangement || {};
     var po = l.position || {};
     var bw = l.barWidth || {};
@@ -136,10 +135,6 @@
       quantityTextColor: qs.textColor || "#374151",
       quantityBgColor: qs.bgColor || "#FFFFFF",
       quantityButtonColor: qs.buttonColor || "#9CA3AF",
-      showTotalPrice: tp.enabled !== undefined ? tp.enabled : true,
-      totalPriceLabel: tp.label !== undefined ? tp.label : "Total:",
-      totalPriceColor: tp.color || "#1F2937",
-      totalPriceFontWeight: tp.fontWeight || "700",
       position: po.position || "bottom",
       elements: ea.elements || [
         { id: "image", label: "Product Image", visible: true },
@@ -164,8 +159,10 @@
       animationDuration: an.duration !== undefined ? an.duration : 300,
       exitAnimation: an.exitType || "slide",
       cartAction: cb.action || "stayOnPage",
+      redirectOnSuccess: cb.redirectOnSuccess || "cart",
       showSuccessNotification: cb.showSuccessNotification !== undefined ? cb.showSuccessNotification : true,
       successMessage: cb.successMessage || "Added to cart successfully!",
+      showOnDesktop: di.showOnDesktop !== undefined ? di.showOnDesktop : true,
       showOnMobile: mo.enabled !== undefined ? mo.enabled : true,
       mobileCompact: mo.compactMode !== undefined ? mo.compactMode : true,
       mobileBreakpoint: mo.breakpoint || 768,
@@ -217,36 +214,64 @@
     var labels = product.variantLabels;
     for (var name in labels) {
       if (labels.hasOwnProperty(name)) {
-        selectedVariants[name] = "";
+        // Modifiers start on the merchant's default value, if any
+        var mod = getModifier(name);
+        var def = mod && mod.values.filter(function (v) { return v.isDefault; })[0];
+        selectedVariants[name] = def ? def.label : "";
       }
     }
+  }
+
+  // Modifier = a non-variant multiple-choice option (BigCommerce "customization").
+  // It is chosen like a variant but doesn't pick the variant or its price.
+  function getModifier(name) {
+    var opts = (product && product.options) || [];
+    for (var i = 0; i < opts.length; i++) {
+      if (opts[i].name === name && !opts[i].isVariantOption && opts[i].values) return opts[i];
+    }
+    return null;
+  }
+
+  // Selected "Name:Value," keys for variant options only (used to match product.variants)
+  function getSelectedVariantKeys() {
+    var keys = [];
+    for (var name in selectedVariants) {
+      if (selectedVariants.hasOwnProperty(name) && selectedVariants[name] && !getModifier(name)) {
+        keys.push(name + ":" + selectedVariants[name] + ",");
+      }
+    }
+    return keys;
+  }
+
+  // A leading comma anchors each "Name:Value," fragment to an option boundary,
+  // so "Size:Small," can't match inside "Shoe Size:Small,"
+  function variantMatches(variant, keys) {
+    var haystack = "," + variant.variantKey;
+    return keys.every(function (key) { return haystack.indexOf("," + key) !== -1; });
+  }
+
+  // Every variant option and every required modifier has a value
+  function hasRequiredSelections(variantsOnly) {
+    for (var n in selectedVariants) {
+      if (!selectedVariants.hasOwnProperty(n) || selectedVariants[n]) continue;
+      var mod = getModifier(n);
+      if (!mod) return false;
+      if (!variantsOnly && mod.isRequired) return false;
+    }
+    return true;
   }
 
   function calculateVariantPrice() {
     if (!product || !product.variants) return null;
 
-    var variantOptions = [];
-    for (var name in selectedVariants) {
-      if (selectedVariants.hasOwnProperty(name) && selectedVariants[name]) {
-        variantOptions.push(name + ":" + selectedVariants[name] + ",");
-      }
-    }
+    var variantOptions = getSelectedVariantKeys();
 
-    // Need all options selected
-    var allSelected = true;
-    for (var n in selectedVariants) {
-      if (selectedVariants.hasOwnProperty(n) && !selectedVariants[n]) {
-        allSelected = false;
-        break;
-      }
-    }
-    if (!allSelected) return null;
+    // Need all variant options selected (modifiers don't change the variant price)
+    if (!hasRequiredSelections(true)) return null;
 
     for (var i = 0; i < product.variants.length; i++) {
       var variant = product.variants[i];
-      var allMatch = variantOptions.every(function (option) {
-        return variant.variantKey.includes(option);
-      });
+      var allMatch = variantMatches(variant, variantOptions);
       if (allMatch) {
         return variant.price;
       }
@@ -257,27 +282,16 @@
   function generateAddToCartUrl() {
     if (!product) return null;
 
-    // Check all variant options are selected
-    for (var n in selectedVariants) {
-      if (selectedVariants.hasOwnProperty(n) && !selectedVariants[n]) {
-        return null;
-      }
-    }
+    // Check all variant options and required modifiers are selected
+    if (!hasRequiredSelections(false)) return null;
 
     var url = "/cart.php?action=add&product_id=" + product.entityId;
 
-    var variantOptions = [];
-    for (var name in selectedVariants) {
-      if (selectedVariants.hasOwnProperty(name) && selectedVariants[name]) {
-        variantOptions.push(name + ":" + selectedVariants[name] + ",");
-      }
-    }
+    var variantOptions = getSelectedVariantKeys();
 
     for (var i = 0; i < product.variants.length; i++) {
       var variant = product.variants[i];
-      var allMatch = variantOptions.every(function (option) {
-        return variant.variantKey.includes(option);
-      });
+      var allMatch = variantMatches(variant, variantOptions);
 
       if (allMatch) {
         // For each selected variant, find the option ID and value entity ID
@@ -287,11 +301,30 @@
           for (var j = 0; j < product.options.length; j++) {
             var opt = product.options[j];
             if (opt.name === variantName && opt.isVariantOption) {
-              url += "&attribute[" + opt.id + "]=" + variant.optionsIds[value];
+              // optionsIds is keyed by option name, so options sharing a value
+              // label (Size: Small / Breed size: Small) keep their own ids.
+              // The label fallback covers product data in the older label-keyed shape.
+              var valueId = variant.optionsIds.hasOwnProperty(variantName)
+                ? variant.optionsIds[variantName]
+                : variant.optionsIds[value];
+              url += "&attribute[" + opt.id + "]=" + valueId;
             }
           }
         }
         break;
+      }
+    }
+
+    // Modifiers: attribute[optionId]=valueId for each chosen value
+    for (var modName in selectedVariants) {
+      if (!selectedVariants.hasOwnProperty(modName) || !selectedVariants[modName]) continue;
+      var mod = getModifier(modName);
+      if (!mod) continue;
+      for (var k = 0; k < mod.values.length; k++) {
+        if (mod.values[k].label === selectedVariants[modName]) {
+          url += "&attribute[" + mod.id + "]=" + mod.values[k].id;
+          break;
+        }
       }
     }
 
@@ -303,6 +336,11 @@
 
   function isMobile() {
     return window.innerWidth <= (config ? config.mobileBreakpoint : 768);
+  }
+
+  // Visibility toggles: is the bar switched off for the current device?
+  function isHiddenOnDevice() {
+    return isMobile() ? !config.showOnMobile : !config.showOnDesktop;
   }
 
   function getShadow() {
@@ -503,38 +541,6 @@
       }
     }
 
-    // Total price (unit price × quantity) on the same line, after the price
-    if (config.showTotalPrice) container.appendChild(renderTotalPrice());
-
-    return container;
-  }
-
-  // ─── Total Price (unit price × quantity) ────────────────────────
-
-  function getTotalPrice() {
-    var unitPrice = currentPrice != null ? currentPrice : product.prices.price;
-    if (unitPrice == null) return null;
-    return Number(unitPrice) * quantity;
-  }
-
-  function renderTotalPrice() {
-    var baseFontSize = config.fontSize || 14;
-    var container = el("span", {
-      id: BAR_ID + "-total",
-      style: {
-        marginLeft: "16px",
-        fontFamily: config.fontFamily,
-        fontSize: baseFontSize + "px",
-        color: config.totalPriceColor,
-      },
-    });
-    if (config.totalPriceLabel) {
-      container.appendChild(el("span", null, config.totalPriceLabel + " "));
-    }
-    container.appendChild(el("span", {
-      id: BAR_ID + "-total-value",
-      style: { fontWeight: config.totalPriceFontWeight || "700" },
-    }, formatPrice(getTotalPrice())));
     return container;
   }
 
@@ -799,7 +805,6 @@
         },
         onChange: function (e) {
           quantity = parseInt(e.target.value, 10);
-          updateTotalPrice();
         },
       });
       for (var i = 1; i <= 10; i++) {
@@ -830,7 +835,6 @@
         onChange: function (e) {
           var v = parseInt(e.target.value, 10);
           if (v > 0) quantity = v;
-          updateTotalPrice();
         },
       });
       container.appendChild(input);
@@ -994,6 +998,13 @@
     }
 
     function renderElementNode(elem) {
+      var node = renderElementById(elem);
+      // Tag nodes so the stacked (mobile) CSS can place each element on its row
+      if (node) node.setAttribute("data-satc-el", elem.id);
+      return node;
+    }
+
+    function renderElementById(elem) {
       switch (elem.id) {
         case "image": return renderImage();
         case "title": return renderTitle();
@@ -1091,7 +1102,13 @@
       contentWrapStyle.margin = "0 auto";
     }
 
-    var contentWrap = el("div", { style: contentWrapStyle, className: "satc-content" }, innerChildren);
+    // Hidden on desktop; on mobile it forces quantity + Add to Cart onto their own row
+    if (isHoriz) innerChildren.push(el("div", { className: "satc-break" }));
+
+    var contentWrap = el("div", {
+      style: contentWrapStyle,
+      className: "satc-content" + (isHoriz ? " satc-horiz" : ""),
+    }, innerChildren);
 
     // Bar background shell (visual styling: bg, border, shadow, padding)
     var inner = el("div", {
@@ -1155,27 +1172,37 @@
     document.body.appendChild(bar);
   }
 
-  // Below this width the bar switches to the stacked, centered layout
-  // (product info / variants / quantity + button). Never below the mobile breakpoint.
+  // Below this width the bar switches to the stacked 3-row layout:
+  //   1. image · title · price   2. variants   3. quantity + Add to Cart
+  // Never below the mobile breakpoint.
   var STACKED_LAYOUT_MAX_WIDTH = 940;
 
   function buildCSS() {
     var stackedMax = Math.max(config && config.mobileBreakpoint || 768, STACKED_LAYOUT_MAX_WIDTH);
+    var rowGap = (config && config.elementGap || 12) + "px";
+    var root = "#" + BAR_ID + " .satc-horiz";
     return (
       "#" + BAR_ID + " * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
       "#" + BAR_ID + " button { font-family: inherit; }\n" +
       "#" + BAR_ID + " select { font-family: inherit; }\n" +
       "#" + BAR_ID + " input { font-family: inherit; }\n" +
       "#" + BAR_ID + " img { display: block; }\n" +
+      "#" + BAR_ID + " .satc-break { display: none; }\n" +
       "@media (max-width: " + stackedMax + "px) {\n" +
-      "  #" + BAR_ID + " .satc-content { justify-content: center !important; flex-wrap: wrap !important; row-gap: " + (config && config.elementGap || 12) + "px !important; }\n" +
-      // Each group takes a full centered row, so product info always sits above the controls
-      "  #" + BAR_ID + " .satc-group { flex-basis: 100% !important; flex-wrap: wrap !important; justify-content: center !important; }\n" +
-      // Variants get their own centered full-width row;
-      // quantity + Add to Cart always follow on the last row
-      "  #" + BAR_ID + "-variants { flex-basis: 100% !important; justify-content: center !important; order: 0; }\n" +
-      "  #" + BAR_ID + "-variants:empty { display: none !important; }\n" +
-      "  #" + BAR_ID + "-quantity, #" + BAR_ID + "-atc-btn { order: 1; }\n" +
+      // Rows are spaced with margins (not row-gap) so an empty variants row adds no extra space
+      "  " + root + " { justify-content: center !important; flex-wrap: wrap !important; row-gap: 0 !important; }\n" +
+      // Dissolve the left/right groups so every element can be placed on its row
+      "  " + root + " .satc-group { display: contents !important; }\n" +
+      // Row 1: image · title · price — title shrinks (ellipsis) so the row never wraps
+      "  " + root + " [data-satc-el='image'] { order: 1; flex-shrink: 0; }\n" +
+      "  " + root + " [data-satc-el='title'] { order: 2; flex: 1 1 0 !important; min-width: 0; }\n" +
+      "  " + root + " #" + BAR_ID + "-price { order: 3; flex-shrink: 0; }\n" +
+      // Row 2: variants, full width and centered
+      "  " + root + " #" + BAR_ID + "-variants { order: 4; flex-basis: 100% !important; justify-content: center !important; margin-top: " + rowGap + "; }\n" +
+      "  " + root + " #" + BAR_ID + "-variants:empty { display: none !important; }\n" +
+      // Row 3: quantity + Add to Cart (the break keeps them off row 1 when there are no variants)
+      "  " + root + " .satc-break { display: block; order: 5; flex-basis: 100%; height: 0; }\n" +
+      "  " + root + " #" + BAR_ID + "-quantity, " + root + " #" + BAR_ID + "-atc-btn { order: 6; margin-top: " + rowGap + "; }\n" +
       "}\n"
     );
   }
@@ -1186,7 +1213,6 @@
     selectedVariants[variantName] = value;
     currentPrice = calculateVariantPrice();
     updatePriceDisplay();
-    updateTotalPrice();
     updateVariantDisplay();
   }
 
@@ -1211,12 +1237,6 @@
   function updateQuantityDisplay() {
     var qtyDisplay = document.getElementById(BAR_ID + "-qty-display");
     if (qtyDisplay) qtyDisplay.textContent = String(quantity);
-    updateTotalPrice();
-  }
-
-  function updateTotalPrice() {
-    var totalEl = document.getElementById(BAR_ID + "-total-value");
-    if (totalEl) totalEl.textContent = formatPrice(getTotalPrice());
   }
 
   // ─── Add to Cart ───────────────────────────────────────────────
@@ -1269,8 +1289,12 @@
           showNotification(config.successMessage || "Added to cart successfully!", "success");
         }
 
-        // Always redirect to cart page after successful add to cart
-        window.location.href = "/cart.php";
+        // Redirect per merchant setting ("stay" keeps the shopper on the page)
+        if (config.redirectOnSuccess === "checkout") {
+          window.location.href = "/checkout";
+        } else if (config.redirectOnSuccess !== "stay") {
+          window.location.href = "/cart.php";
+        }
       })
       .catch(function (err) {
         console.error("Sticky ATC error:", err);
@@ -1407,7 +1431,7 @@
   // ─── Show/Hide & Animation ─────────────────────────────────────
 
   function showBar() {
-    if (barVisible) return;
+    if (barVisible || isHiddenOnDevice()) return;
     var bar = document.getElementById(BAR_ID);
     if (!bar) return;
 
@@ -1496,16 +1520,61 @@
 
   // ─── Trigger Setup ─────────────────────────────────────────────
 
+  // The theme's own Add to Cart button. Cornerstone-based Stencil themes use
+  // #form-action-addToCart; the rest are fallbacks for customised themes.
+  var NATIVE_ATC_SELECTORS = [
+    "#form-action-addToCart",
+    "[data-button-type='add-cart']",
+    ".productView form[action*='cart.php'] [type='submit']",
+    "form[data-cart-item-add] [type='submit']",
+    "form[action*='cart.php'] [type='submit']",
+  ];
+
+  function findNativeAddToCart() {
+    for (var i = 0; i < NATIVE_ATC_SELECTORS.length; i++) {
+      var nodes = document.querySelectorAll(NATIVE_ATC_SELECTORS[i]);
+      for (var j = 0; j < nodes.length; j++) {
+        var node = nodes[j];
+        // Skip our own bar and anything not rendered (display:none, hidden tabs)
+        if (node.closest("#" + BAR_ID)) continue;
+        if (node.getClientRects().length === 0) continue;
+        return node;
+      }
+    }
+    return null;
+  }
+
+  // "scroll" mode: show the bar as soon as the theme's Add to Cart button has
+  // scrolled up out of view, hide it when the button is back on screen.
+  // Returns false when there's no button to watch (caller falls back to scroll %).
+  function watchNativeAddToCart() {
+    if (typeof IntersectionObserver === "undefined") return false;
+    var target = findNativeAddToCart();
+    if (!target) return false;
+
+    new IntersectionObserver(function (entries) {
+      var entry = entries[entries.length - 1];
+      // Only "scrolled past" counts — a button still below the fold hasn't been seen yet
+      if (!entry.isIntersecting && entry.boundingClientRect.bottom <= 0) {
+        showBar();
+      } else if (barVisible) {
+        hideBar();
+      }
+    }).observe(target);
+    return true;
+  }
+
   function setupTrigger() {
-    // Mobile check
-    if (isMobile() && !config.showOnMobile) return;
+    // Device visibility is enforced in showBar(), so the trigger still works
+    // after a resize/rotation onto a device the bar is enabled for.
 
     if (config.triggerMode === "always") {
       showBar();
     } else if (config.triggerMode === "delay") {
       setTimeout(function () { showBar(); }, (config.triggerDelay || 3) * 1000);
-    } else {
-      // scroll trigger
+    } else if (!watchNativeAddToCart()) {
+      // scroll trigger fallback (theme's Add to Cart button not found):
+      // show once the shopper has scrolled scrollThreshold % of the page
       var threshold = config.scrollThreshold || 50;
       var scrollDebounceTimer = null;
       window.addEventListener("scroll", function () {
@@ -1524,10 +1593,12 @@
       }, { passive: true });
     }
 
-    // Handle resize for mobile toggle
+    // Crossing the mobile breakpoint can switch the bar off (or back on for "always")
     window.addEventListener("resize", function () {
-      if (isMobile() && !config.showOnMobile) {
-        hideBar();
+      if (isHiddenOnDevice()) {
+        if (barVisible) hideBar();
+      } else if (config.triggerMode === "always") {
+        showBar();
       }
     }, { passive: true });
   }
@@ -1545,7 +1616,7 @@
   function revealBarInstantly() {
     var bar = document.getElementById(BAR_ID);
     if (!bar) return;
-    if (isMobile() && !config.showOnMobile) return;
+    if (isHiddenOnDevice()) return;
     bar.style.transition = "none";
     bar.style.transform = config.position === "left" || config.position === "right"
       ? "translateY(-50%)" : "translateY(0)";

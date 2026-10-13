@@ -64,12 +64,6 @@ export interface DefaultStickyBarConfig {
     quantityBgColor: string;
     quantityButtonColor: string;
 
-    // Total Price (unit price × quantity)
-    showTotalPrice: boolean;
-    totalPriceLabel: string;
-    totalPriceColor: string;
-    totalPriceFontWeight: string;
-
     // Layout
     position: "top" | "bottom" | "left" | "right";
     elements: Element[];
@@ -93,9 +87,11 @@ export interface DefaultStickyBarConfig {
 
     // Behavior - Cart
     cartAction: "stayOnPage" | "redirect" | "drawer" | "flyToCart";
+    redirectOnSuccess: "stay" | "cart" | "checkout";
     showSuccessNotification: boolean;
     successMessage: string;
     // Behavior - Mobile
+    showOnDesktop: boolean;
     showOnMobile: boolean;
     mobileCompact: boolean;
     mobileBreakpoint: number;
@@ -118,7 +114,6 @@ interface StylingConfig {
     imageStyling: ImageStylingConfig;
     variantStyling: VariantStylingConfig;
     quantityStyling: QuantityStylingConfig;
-    totalPriceStyling: TotalPriceStylingConfig;
 }
 
 interface LayoutConfig {
@@ -206,13 +201,6 @@ interface QuantityStylingConfig {
     buttonColor: string;
 }
 
-interface TotalPriceStylingConfig {
-    enabled: boolean;
-    label: string;
-    color: string;
-    fontWeight: string;
-}
-
 // ─── Layout Sub-configs ────────────────────────────────────────
 
 interface ElementArrangementConfig {
@@ -240,7 +228,8 @@ interface SpacingConfig {
 // ─── Behavior Sub-configs ──────────────────────────────────────
 
 interface DisplayConfig {
-    enabled: boolean;
+    enabled: boolean; // legacy master switch; superseded by showOnDesktop + mobile.enabled
+    showOnDesktop?: boolean;
     triggerMode: "scroll" | "always" | "delay";
     triggerDelay: number;
     scrollThreshold: number;
@@ -254,6 +243,7 @@ interface AnimationConfig {
 
 interface CartBehaviorConfig {
     action: "stayOnPage" | "redirect" | "drawer" | "flyToCart";
+    redirectOnSuccess: "stay" | "cart" | "checkout";
     showSuccessNotification: boolean;
     successMessage: string;
 }

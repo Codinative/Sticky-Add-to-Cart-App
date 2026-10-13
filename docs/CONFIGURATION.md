@@ -112,19 +112,6 @@ option display name **case-insensitively**; unconfigured options default to
 | `quantityBorderColor` | `borderColor` | hex | `#E5E7EB` | |
 | `quantityBorderRadius` | `borderRadius` | number px | `8` | 0–16 |
 
-### Total Price → `styling.totalPriceStyling`
-
-Shows `unit price × selected quantity` inside the `price` element, on the same
-line after the price (16px gap). Updates live on `+` / `−`, quantity input/dropdown, and variant change.
-Hidden if the `price` element itself is hidden.
-
-| Flat key | Nested key | Type | Default | Notes |
-|----------|-----------|------|---------|-------|
-| `showTotalPrice` | `enabled` | boolean | `true` | |
-| `totalPriceLabel` | `label` | string | `Total:` | Empty string = amount only |
-| `totalPriceColor` | `color` | hex | `#1F2937` | Label + amount color |
-| `totalPriceFontWeight` | `fontWeight` | string | `700` | Amount weight |
-
 ---
 
 ## Layout
@@ -171,10 +158,11 @@ is render order within each group.
 
 | Flat key | Nested key | Type | Default | Notes |
 |----------|-----------|------|---------|-------|
-| `enabled` | `enabled` | boolean | `true` | Master on/off |
+| `enabled` | `enabled` | boolean | `true` | Legacy master switch, no UI. A config saved with `false` loads in the dashboard as both Visibility toggles off; saving writes `true` |
+| `showOnDesktop` | `showOnDesktop` | boolean | `true` | Visibility card: viewport wider than `mobileBreakpoint` |
 | `triggerMode` | `triggerMode` | `scroll` \| `always` \| `delay` | `scroll` | |
 | `triggerDelay` | `triggerDelay` | number sec | `3` | Used when `delay`; 0–30 |
-| `scrollThreshold` | `scrollThreshold` | number % | `50` | Used when `scroll`; 10–100 |
+| `scrollThreshold` | `scrollThreshold` | number % | `50` | `scroll` mode **fallback** only, used when the theme's Add to Cart button isn't found; 10–100 |
 
 ### Animation → `behavior.animation`
 
@@ -189,6 +177,7 @@ is render order within each group.
 | Flat key | Nested key | Type | Default | Notes |
 |----------|-----------|------|---------|-------|
 | `cartAction` | `action` | string | `stayOnPage` | Post-add behavior |
+| `redirectOnSuccess` | `redirectOnSuccess` | `stay` \| `cart` \| `checkout` | `cart` | Where to send the shopper after a successful add (`/cart.php` or `/checkout`) |
 | `showSuccessNotification` | `showSuccessNotification` | boolean | `true` | |
 | `successMessage` | `successMessage` | string | `Added to cart successfully!` | |
 
@@ -196,7 +185,7 @@ is render order within each group.
 
 | Flat key | Nested key | Type | Default | Notes |
 |----------|-----------|------|---------|-------|
-| `showOnMobile` | `enabled` | boolean | `true` | |
+| `showOnMobile` | `enabled` | boolean | `true` | Visibility card: viewport ≤ `mobileBreakpoint` |
 | `mobileCompact` | `compactMode` | boolean | `true` | Smaller layout under the breakpoint |
 | `mobileBreakpoint` | `breakpoint` | number px | `768` | `isMobile()` = `innerWidth ≤ breakpoint`; 320–1024 |
 

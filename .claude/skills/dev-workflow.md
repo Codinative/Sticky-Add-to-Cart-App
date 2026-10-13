@@ -30,6 +30,7 @@ and the template is [.env.example](../../.env.example). Summary:
 | `JWT_KEY` | [lib/auth.ts](../../lib/auth.ts) | signs the `context` JWT; keep stable across deploys |
 | `DB_TYPE` | [lib/db.ts](../../lib/db.ts) | only `firebase`; default if unset |
 | `FIRE_ADMIN_PROJECT_ID` / `FIRE_ADMIN_CLIENT_EMAIL` / `FIRE_ADMIN_PRIVATE_KEY` | [lib/dbs/firebase.ts](../../lib/dbs/firebase.ts) | service account; `\n` in the key is unescaped at runtime |
+| `NEXT_PUBLIC_REVIEW_URL` | [app/dashboard/page.tsx](../../app/dashboard/page.tsx) | optional; Marketplace review link for the header button. Public, inlined at build — redeploy after changing. Unset: hidden in prod, disabled placeholder in dev |
 | `API_URL` + `LOGIN_URL` | [lib/auth.ts](../../lib/auth.ts) | optional, **set both** to target a non-prod BC env |
 
 `.env` is gitignored. It holds the Firebase admin private key and the BC client

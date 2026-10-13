@@ -24,10 +24,15 @@ Walk the render gate in `init()` ([sticky-bar.js](../../scripts/storefront/stick
 3. **It's a product page.** `GET /api/storefront/product?sid=&path=…` must return
    `isProductPage: true`. The decision is the BC GraphQL `route(path:)` lookup —
    custom URLs, non-product pages, and unpublished products return `false`.
-4. **`config.enabled` is true.** The Behavior tab master toggle. Stored at
-   `behavior.display.enabled`.
-5. **Not hidden by mobile rules.** `isMobile() && !showOnMobile` skips the bar.
-6. **Trigger fired.** Default `scroll` mode only shows past `scrollThreshold` percent.
+4. **`config.enabled` is true.** Legacy master switch (no UI any more). Stored at
+   `behavior.display.enabled`; re-saving from the dashboard sets it to `true`.
+5. **Visibility toggle on for this device.** Dashboard Visibility card →
+   `behavior.display.showOnDesktop` / `behavior.mobile.enabled`; checked by
+   `isHiddenOnDevice()` against `mobileBreakpoint`.
+6. **Trigger fired.** Default `scroll` mode shows once the theme's Add to Cart button
+   has scrolled up out of view. If the theme's button matches none of
+   `NATIVE_ATC_SELECTORS` (in `sticky-bar.js`), it falls back to `scrollThreshold`
+   percent, so on a custom theme the bar may appear "late": add that theme's selector.
    Test with `always` to isolate.
 7. **Not behind another element.** Raise `zIndex` (Advanced) above chat/cookie widgets.
 
@@ -53,14 +58,16 @@ Walk the render gate in `init()` ([sticky-bar.js](../../scripts/storefront/stick
 
 ## Wrong price / add-to-cart does nothing
 
-- `generateAddToCartUrl()` returns `null` until **every** option is selected;
+- `generateAddToCartUrl()` returns `null` until every variant option and every
+  **required** modifier is selected;
   the button calls `highlightMissingVariants()` instead of navigating.
 - Variant matching is by **`variantKey`** (`"Color:Red,Size:M,"`). If a product's
   option display names contain commas or colons, the key can mis-split — inspect
   `product.variants` from `/api/storefront/product`.
 - The add-to-cart URL uses `attribute[{optionId}]={valueEntityId}`; `optionId` comes
-  from `product.options` where `isVariantOption` is true. Non-variant options aren't
-  appended.
+  from `product.options` where `isVariantOption` is true. Multiple-choice modifiers
+  are appended from their own `values`; checkbox/text/number/date/file modifiers
+  aren't supported, so a product with a *required* one fails with the store's error.
 
 ## Variant options not styled as configured
 

@@ -69,12 +69,6 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
     quantityBgColor: "#FFFFFF",
     quantityButtonColor: "#9CA3AF",
 
-    // Total Price (unit price × quantity)
-    showTotalPrice: true,
-    totalPriceLabel: "Total:",
-    totalPriceColor: "#1F2937",
-    totalPriceFontWeight: "700",
-
     // Layout
     position: "bottom",
     elements: [
@@ -105,9 +99,11 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
 
     // Behavior - Cart
     cartAction: "stayOnPage",
+    redirectOnSuccess: "cart",
     showSuccessNotification: true,
     successMessage: "Added to cart successfully!",
     // Behavior - Mobile
+    showOnDesktop: true,
     showOnMobile: true,
     mobileCompact: true,
     mobileBreakpoint: 768,

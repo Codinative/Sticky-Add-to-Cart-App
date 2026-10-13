@@ -11,7 +11,7 @@ export const MOCK_PRODUCT = {
     name: "Premium Wireless Headphones",
     image: { url: "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2056%2056%22%3E%3Crect%20width%3D%2256%22%20height%3D%2256%22%20fill%3D%22%23F3F4F6%22%20rx%3D%228%22%2F%3E%3Crect%20x%3D%2212%22%20y%3D%2212%22%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%222%22%20fill%3D%22none%22%20stroke%3D%22%23D1D5DB%22%20stroke-width%3D%221.5%22%2F%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%2221%22%20r%3D%222%22%20fill%3D%22%23D1D5DB%22%2F%3E%3Cpath%20d%3D%22m12%2036%208-8%205%205%203-3%2010%2010%22%20fill%3D%22none%22%20stroke%3D%22%23D1D5DB%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E", alt: "Product image" },
     prices: { price: 299.99, basePrice: 399.99, salePrice: 299.99 },
-    variantLabels: { "Size": ["S", "M", "L", "XL"], "Color": ["Red", "Blue", "Green"] },
+    variantLabels: { "Size": ["S", "M", "L", "XL"], "Color": ["Red", "Blue", "Green"], "Gift Wrap": ["No", "Yes"] },
     variants: [
       { variantKey: "Size:S,Color:Red,", price: 299.99, optionsIds: { "Size": 101, "Color": 201 } },
       { variantKey: "Size:M,Color:Blue,", price: 299.99, optionsIds: { "Size": 102, "Color": 202 } },
@@ -20,6 +20,11 @@ export const MOCK_PRODUCT = {
     options: [
       { id: 100, name: "Size", isVariantOption: true },
       { id: 200, name: "Color", isVariantOption: true },
+      // Modifier (customization) — shown in the variants row, not part of the variant
+      {
+        id: 300, name: "Gift Wrap", isVariantOption: false, isRequired: false,
+        values: [{ id: 301, label: "No", isDefault: true }, { id: 302, label: "Yes", isDefault: false }],
+      },
     ],
   },
 };

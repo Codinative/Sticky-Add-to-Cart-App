@@ -9,12 +9,17 @@ import { StylePanel } from "../../components/dashboard/stylePanel";
 import { LayoutPanel } from "../../components/dashboard/layoutPanel";
 import BehaviorPanel from "../../components/dashboard/behaviorPanel";
 import { StatusBar } from "../../components/dashboard/statusBar";
+import { BillingCard } from "../../components/dashboard/billingCard";
+import { VisibilityCard } from "../../components/dashboard/visibilityCard";
 import Toast from "../../components/common/toast";
 import { defaultStickyBarConfig } from "@/lib/defaultConfig";
 import { useSession } from "@/context/session";
 import StickyBarDashboardSkeleton from "./loading";
 import { DefaultStickyBarConfig, StickyBarConfig } from "@/types/config";
 import { flattenToNestedConfig, nestedToFlattenConfig } from "@/lib/configConverter";
+
+// App Marketplace review page; inlined at build time. Unset = button hidden in production.
+const REVIEW_URL = process.env.NEXT_PUBLIC_REVIEW_URL || "";
 
 export default function StickyBarDashboard() {
   const [config, setConfig] = useState<DefaultStickyBarConfig | null>(null);
@@ -129,6 +134,9 @@ export default function StickyBarDashboard() {
     }
   };
 
+  // Bar is live when it's shown on at least one device type
+  const isLive = !!config && (config.showOnDesktop || config.showOnMobile);
+
   const tabs = [
     { id: "style", label: "Styling", icon: <Icons.Palette size={16} /> },
     { id: "layout", label: "Layout", icon: <Icons.Layout size={16} /> },
@@ -200,6 +208,29 @@ export default function StickyBarDashboard() {
                 priority
               />
 
+              <div className="flex items-center gap-2">
+              {/* Leave a review — BigCommerce App Marketplace listing */}
+              {REVIEW_URL ? (
+                <a
+                  href={REVIEW_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
+                >
+                  <Icons.ThumbsUp size={15} />
+                  <span className="hidden sm:inline">Leave us a review</span>
+                </a>
+              ) : process.env.NODE_ENV !== "production" && (
+                // Dev-only placeholder until NEXT_PUBLIC_REVIEW_URL is set; hidden in production
+                <span
+                  title="Set NEXT_PUBLIC_REVIEW_URL to enable"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-400 border border-dashed border-slate-200 rounded-lg cursor-not-allowed"
+                >
+                  <Icons.ThumbsUp size={15} />
+                  <span className="hidden sm:inline">Leave us a review</span>
+                </span>
+              )}
+
               {/* Help dropdown */}
               <div ref={helpRef} className="relative">
                 <button
@@ -234,6 +265,7 @@ export default function StickyBarDashboard() {
                   </div>
                 )}
               </div>
+              </div>
             </div>
           </div>
         </div>
@@ -243,6 +275,18 @@ export default function StickyBarDashboard() {
           <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:h-[calc(100vh-128px)]">
             {/* Left: Config Panel */}
             <div className="w-full lg:w-[400px] lg:shrink-0 flex flex-col gap-4 lg:h-full">
+              {/* Plan / subscription */}
+              <div className="shrink-0">
+                <BillingCard context={encodedContext} />
+              </div>
+
+              {/* Device visibility */}
+              {config && (
+                <div className="shrink-0">
+                  <VisibilityCard config={config} updateConfig={updateConfig} />
+                </div>
+              )}
+
               {/* Tab Navigation */}
               <div className="flex gap-1 p-1 bg-white rounded-lg border border-gray-200 shrink-0">
                 {tabs.map((tab) => (
@@ -276,9 +320,9 @@ export default function StickyBarDashboard() {
                   </span>
                   <span className="text-sm font-semibold text-slate-900">Live Preview</span>
                   {/* Active / Inactive status */}
-                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium border transition-all ${config?.enabled ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${config?.enabled ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
-                    {config?.enabled ? "Active" : "Inactive"}
+                  <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium border transition-all ${isLive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+                    {isLive ? "Active" : "Inactive"}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">

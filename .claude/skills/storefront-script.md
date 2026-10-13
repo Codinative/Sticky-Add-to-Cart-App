@@ -62,8 +62,9 @@ both places** or the storefront silently falls back to defaults for the changed 
   `renderVariantRectList`.
 - **Quantity styles**: `plusMinus`, `dropdown`, `input` (in `renderQuantity`).
 - **Button styles**: `filled` / `outline` / `pill` / `ghost` (in `renderButton`).
-- Mobile: `isMobile()` is `innerWidth <= config.mobileBreakpoint`; compact mode and
-  `showOnMobile` gate the layout.
+- Mobile: `isMobile()` is `innerWidth <= config.mobileBreakpoint`; compact mode
+  gates the layout. `isHiddenOnDevice()` applies the Visibility toggles
+  (`showOnDesktop` / `showOnMobile`).
 
 ## Variant + price + add-to-cart
 
@@ -77,19 +78,30 @@ both places** or the storefront silently falls back to defaults for the changed 
   /cart.php?action=add&product_id={entityId}&attribute[{optionId}]={valueEntityId}…&qty={n}
   ```
   `optionId` comes from `product.options` (where `isVariantOption`); the value entity
-  id from the matched variant's `optionsIds[label]`. `handleAddToCart()` posts to this
+  id from the matched variant's `optionsIds[optionName]` (falls back to
+  `optionsIds[label]` for the older label-keyed shape). `variantMatches` anchors each
+  `name:value,` fragment on a comma so `Size:S,` can't match inside `Shoe Size:S,`.
+- **Modifiers** (non-variant multiple-choice options with `values`, see `getModifier`)
+  share the variants row and `selectedVariants`, start on their `isDefault` value, are
+  skipped by `variantKey` matching, and block add-to-cart only when `isRequired`.
+  Their `attribute[{optionId}]={value.id}` is appended after the variant attributes. `handleAddToCart()` posts to this
   URL; `highlightMissingVariants()` flags unselected options; `extractErrorFromHtml`
   surfaces a storefront error; `showNotification` shows the success toast.
 
 ## Triggers (`setupTrigger`)
 
-- Skips entirely if `isMobile() && !config.showOnMobile`.
+- Device visibility is enforced in `showBar()` (`isHiddenOnDevice()`), not here, so
+  the trigger keeps working after a resize onto an enabled device.
 - `always` → `showBar()` immediately.
 - `delay` → `showBar()` after `config.triggerDelay` seconds.
-- `scroll` (default) → debounced scroll listener; shows once scrolled-percent ≥
-  `config.scrollThreshold`, hides again above the threshold if it was visible.
-- A `resize` listener hides the bar if the viewport crosses into mobile with
-  `showOnMobile` off.
+- `scroll` (default) → `watchNativeAddToCart()`: finds the theme's own Add to Cart
+  button (`NATIVE_ATC_SELECTORS`, Cornerstone `#form-action-addToCart` first) and an
+  `IntersectionObserver` shows the bar the moment the button scrolls **up** out of view,
+  hiding it when the button is back on screen. If no rendered button is found, falls
+  back to a debounced scroll listener: show once scrolled-percent ≥
+  `config.scrollThreshold`, hide again below it.
+- A `resize` listener hides the bar when the new device type is switched off, and
+  re-shows it in `always` mode when it's switched on.
 
 ## Show / hide & layout safety
 
