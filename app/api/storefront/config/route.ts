@@ -1,4 +1,5 @@
 import { getStoreByUniqueId, getStickyBarConfig } from "@/lib/dbs/firebase";
+import { hasActiveSubscription } from "@/lib/billing";
 import { NextRequest, NextResponse } from "next/server";
 
 const corsHeaders = {
@@ -28,6 +29,15 @@ export async function GET(req: NextRequest) {
             return NextResponse.json(
                 { message: "Store not found" },
                 { status: 404, headers: corsHeaders }
+            );
+        }
+
+        // No trial / subscription → no bar. Respond 200 with a null config so the
+        // storefront script quietly renders nothing instead of logging an error.
+        if (!(await hasActiveSubscription(store.storeHash))) {
+            return NextResponse.json(
+                { config: null, reason: "subscription_inactive" },
+                { status: 200, headers: { ...corsHeaders, "Cache-Control": "no-cache, no-store, must-revalidate" } }
             );
         }
 

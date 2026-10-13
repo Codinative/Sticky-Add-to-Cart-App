@@ -3,6 +3,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { randomUUID } from 'crypto';
 import { SessionProps } from '../../types';
 import { StickyBarConfig } from '@/types/config';
+import { BillingRecord } from '@/types/billing';
 
 // Firebase Admin SDK initialization for server-side operations
 const { 
@@ -225,8 +226,25 @@ export async function deleteStickyBarConfig(storeHash: string) {
   try {
     const ref = db.collection('stores').doc(storeHash).collection('stickyBar').doc('config');
     await ref.delete();
-    return;
+    return ref.id;
   } catch (error) {
+    console.error('Error deleting sticky bar config:', error);
     return null;
   }
+}
+
+// ─── Billing (Stripe) ──────────────────────────────────────────
+// billing/{storeHash} is intentionally NOT deleted on uninstall (see types/billing.ts).
+
+export async function getBillingRecord(storeHash: string): Promise<BillingRecord | null> {
+  if (!storeHash) return null;
+
+  const doc = await db.collection('billing').doc(storeHash).get();
+  return doc.exists ? (doc.data() as BillingRecord) : null;
+}
+
+export async function updateBillingRecord(storeHash: string, data: BillingRecord) {
+  if (!storeHash) return;
+
+  await db.collection('billing').doc(storeHash).set({ ...data, updatedAt: Date.now() }, { merge: true });
 }

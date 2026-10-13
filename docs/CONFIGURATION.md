@@ -89,7 +89,7 @@ Stored at Firestore path `stores/{storeHash}/stickyBar/config` (the nested form)
 
 | Flat key | Nested key | Type | Default | Notes |
 |----------|-----------|------|---------|-------|
-| `variantOptions` | `options` | `VariantOptionConfig[]` | `[{Size, rectangleList}, {Color, swatch}]` | Per-option display type; see below |
+| `variantOptions` | `options` | `VariantOptionConfig[]` | `[{Size, dropdown}, {Color, dropdown}]` | Per-option display type; see below |
 | `variantShowLabels` | `showLabels` | boolean | `true` | Show `Size:` / `Color:` labels |
 | `variantActiveColor` | `activeColor` | hex | `#2563EB` | Selected value highlight |
 | `variantBorderColor` | `borderColor` | hex | `#E5E7EB` | |
@@ -138,7 +138,7 @@ is render order within each group.
 |----------|-----------|------|---------|-------|
 | `barWidthMode` | `mode` | `full` \| `contained` | `full` | |
 | `barMaxWidth` | `maxWidth` | number px | `1200` | Used when `contained`; 600–1800 |
-| `contentMaxWidth` | `contentMaxWidth` | number px | `0` | Inner content cap; 0 = no limit |
+| `contentMaxWidth` | `contentMaxWidth` | number px | `1400` | Inner content cap (bar background stays full width); 0 = no limit. Dashboard presets: None, 1140, 1200, 1280, 1400, 1600 |
 | `contentAlignment` | `contentAlignment` | `start`\|`center`\|`end`\|`spaceBetween`\|`spaceAround`\|`spaceEvenly` | `spaceBetween` | Horizontal distribution |
 | `verticalAlignment` | `verticalAlignment` | `top` \| `center` \| `bottom` | `center` | |
 
@@ -158,10 +158,11 @@ is render order within each group.
 
 | Flat key | Nested key | Type | Default | Notes |
 |----------|-----------|------|---------|-------|
-| `enabled` | `enabled` | boolean | `true` | Master on/off |
+| `enabled` | `enabled` | boolean | `true` | Legacy master switch, no UI. A config saved with `false` loads in the dashboard as both Visibility toggles off; saving writes `true` |
+| `showOnDesktop` | `showOnDesktop` | boolean | `true` | Visibility card: viewport wider than `mobileBreakpoint` |
 | `triggerMode` | `triggerMode` | `scroll` \| `always` \| `delay` | `scroll` | |
 | `triggerDelay` | `triggerDelay` | number sec | `3` | Used when `delay`; 0–30 |
-| `scrollThreshold` | `scrollThreshold` | number % | `50` | Used when `scroll`; 10–100 |
+| `scrollThreshold` | `scrollThreshold` | number % | `50` | `scroll` mode **fallback** only, used when the theme's Add to Cart button isn't found; 10–100 |
 
 ### Animation → `behavior.animation`
 
@@ -176,6 +177,7 @@ is render order within each group.
 | Flat key | Nested key | Type | Default | Notes |
 |----------|-----------|------|---------|-------|
 | `cartAction` | `action` | string | `stayOnPage` | Post-add behavior |
+| `redirectOnSuccess` | `redirectOnSuccess` | `stay` \| `cart` \| `checkout` | `cart` | Where to send the shopper after a successful add (`/cart.php` or `/checkout`) |
 | `showSuccessNotification` | `showSuccessNotification` | boolean | `true` | |
 | `successMessage` | `successMessage` | string | `Added to cart successfully!` | |
 
@@ -183,7 +185,7 @@ is render order within each group.
 
 | Flat key | Nested key | Type | Default | Notes |
 |----------|-----------|------|---------|-------|
-| `showOnMobile` | `enabled` | boolean | `true` | |
+| `showOnMobile` | `enabled` | boolean | `true` | Visibility card: viewport ≤ `mobileBreakpoint` |
 | `mobileCompact` | `compactMode` | boolean | `true` | Smaller layout under the breakpoint |
 | `mobileBreakpoint` | `breakpoint` | number px | `768` | `isMobile()` = `innerWidth ≤ breakpoint`; 320–1024 |
 

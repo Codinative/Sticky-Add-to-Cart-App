@@ -5,7 +5,7 @@ import { getStorefrontToken, saveStorefrontToken } from "@/lib/dbs/firebase";
 export interface ProcessedVariant {
     variantKey: string;
     price: number;
-    optionsIds: Record<string, number>;
+    optionsIds: Record<string, number>; // option display name → value entityId
 }
 
 export interface ProcessedProduct {
@@ -20,7 +20,16 @@ export interface ProcessedProduct {
     };
     variants: ProcessedVariant[];
     variantLabels: Record<string, string[]>;
-    options: { id: number; name: string; isVariantOption: boolean }[];
+    options: ProcessedOption[];
+}
+
+export interface ProcessedOption {
+    id: number;
+    name: string;
+    isVariantOption: boolean;
+    isRequired: boolean;
+    // Modifier (non-variant) multiple-choice options only: value ids for attribute[id]=valueId
+    values?: { id: number; label: string; isDefault: boolean }[];
 }
 
 export interface ProductRouteResult {
@@ -139,6 +148,17 @@ function buildProductByPathQuery(path: string): string {
                                     isVariantOption
                                     isRequired
                                     __typename
+                                    ... on MultipleChoiceOption {
+                                        values(first: 50) {
+                                            edges {
+                                                node {
+                                                    entityId
+                                                    label
+                                                    isDefault
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -210,17 +230,30 @@ export async function fetchProductByPath(
 function processGraphQLProduct(gqlProduct: any): ProcessedProduct {
     const variants: ProcessedVariant[] = [];
     const variantLabels: Record<string, string[]> = {};
-    const options: { id: number; name: string; isVariantOption: boolean }[] = [];
+    const options: ProcessedOption[] = [];
+    // Multiple-choice modifiers (customizations), shown in the variants row after the variant options
+    const modifierLabels: Record<string, string[]> = {};
 
     // Process product options from productOptions
     if (gqlProduct.productOptions?.edges) {
         for (const edge of gqlProduct.productOptions.edges) {
             const opt = edge.node;
-            options.push({
+            const option: ProcessedOption = {
                 id: opt.entityId,
                 name: opt.displayName,
                 isVariantOption: opt.isVariantOption,
-            });
+                isRequired: !!opt.isRequired,
+            };
+            if (!opt.isVariantOption && opt.__typename === "MultipleChoiceOption" && opt.values?.edges?.length) {
+                const values = opt.values.edges.map((v: any) => ({
+                    id: v.node.entityId,
+                    label: v.node.label,
+                    isDefault: !!v.node.isDefault,
+                }));
+                option.values = values;
+                modifierLabels[opt.displayName] = values.map((v: { label: string }) => v.label);
+            }
+            options.push(option);
         }
     }
 
@@ -246,8 +279,9 @@ function processGraphQLProduct(gqlProduct: any): ProcessedProduct {
                     // Build variantKey: "Color:Red,Size:M,"
                     variantKey += `${displayName}:${label},`;
 
-                    // Build optionsIds: { "Red": 111, "M": 222 }
-                    optionsIds[label] = entityId;
+                    // Build optionsIds keyed by option name: { "Color": 111, "Size": 222 }
+                    // (a variant has one value per option; labels can repeat across options)
+                    optionsIds[displayName] = entityId;
 
                     // Collect unique variant labels
                     if (!variantLabels[displayName]) {
@@ -265,6 +299,11 @@ function processGraphQLProduct(gqlProduct: any): ProcessedProduct {
                 optionsIds,
             });
         }
+    }
+
+    // Modifiers render after the variant options (a variant option wins on a name clash)
+    for (const name in modifierLabels) {
+        if (!variantLabels[name]) variantLabels[name] = modifierLabels[name];
     }
 
     // Extract pricing

@@ -317,7 +317,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
                         updated[idx] = { ...updated[idx], name: e.target.value };
                         updateConfig("variantOptions", updated);
                       }}
-                      className="flex-1 min-w-0 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
+                      className="flex-1 min-w-0 px-2.5 py-1.5 text-sm text-gray-700 placeholder:text-gray-400 border border-gray-200 rounded-lg bg-white hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
                     />
                     <select
                       value={opt.displayType}
@@ -326,7 +326,7 @@ export function StylePanel({ config, updateConfig }: { config: any, updateConfig
                         updated[idx] = { ...updated[idx], displayType: e.target.value };
                         updateConfig("variantOptions", updated);
                       }}
-                      className="px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
+                      className="px-2.5 py-1.5 text-sm text-gray-700 border border-gray-200 rounded-lg bg-white hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
                     >
                       <option value="dropdown">Dropdown</option>
                       <option value="swatch">Swatch</option>

@@ -11,13 +11,6 @@ export default function BehaviorPanel({ config, updateConfig }: { config: any, u
         {/* ─── Display Settings ──────────────────────────────── */}
         <SectionCard title="Display Settings" icon={<Icons.Zap size={16} />}>
           <div className="space-y-5">
-            <Toggle
-              checked={config.enabled}
-              onChange={(v) => updateConfig("enabled", v)}
-              label="Enable Sticky Bar"
-              description="Show the sticky add to cart bar on product pages"
-            />
-            <div className="border-t border-gray-100 pt-4" />
             <SelectField
               label="Trigger Mode"
               value={config.triggerMode}
@@ -39,14 +32,19 @@ export default function BehaviorPanel({ config, updateConfig }: { config: any, u
               />
             )}
             {config.triggerMode === "scroll" && (
-              <RangeSlider
-                label="Scroll Threshold"
-                value={config.scrollThreshold}
-                onChange={(v) => updateConfig("scrollThreshold", v)}
-                min={10}
-                max={100}
-                suffix="%"
-              />
+              <>
+                <RangeSlider
+                  label="Fallback Scroll Threshold"
+                  value={config.scrollThreshold}
+                  onChange={(v) => updateConfig("scrollThreshold", v)}
+                  min={10}
+                  max={100}
+                  suffix="%"
+                />
+                <p className="text-xs text-gray-400 -mt-3">
+                  The bar appears as soon as your theme&apos;s Add to Cart button scrolls out of view. This percentage is used only if that button can&apos;t be found on the page.
+                </p>
+              </>
             )}
 
           </div>
@@ -100,6 +98,16 @@ export default function BehaviorPanel({ config, updateConfig }: { config: any, u
         {/* ─── Cart Behavior ─────────────────────────────────── */}
         <SectionCard title="Cart Behavior" icon={<Icons.ShoppingCart size={16} />}>
           <div className="space-y-5">
+            <SelectField
+              label="Redirect on success"
+              value={config.redirectOnSuccess}
+              onChange={(v) => updateConfig("redirectOnSuccess", v)}
+              options={[
+                { value: "stay", label: "Stay on the page" },
+                { value: "cart", label: "Go to Cart page" },
+                { value: "checkout", label: "Go to Checkout page" },
+              ]}
+            />
 
             <Toggle
               checked={config.showSuccessNotification}
@@ -130,12 +138,6 @@ export default function BehaviorPanel({ config, updateConfig }: { config: any, u
         {/* ─── Mobile Settings ───────────────────────────────── */}
         <SectionCard title="Mobile Settings" icon={<Icons.Smartphone size={16} />} defaultOpen={false}>
           <div className="space-y-5">
-            <Toggle
-              checked={config.showOnMobile}
-              onChange={(v) => updateConfig("showOnMobile", v)}
-              label="Show on Mobile"
-              description="Display the sticky bar on mobile devices"
-            />
             <Toggle
               checked={config.mobileCompact}
               onChange={(v) => updateConfig("mobileCompact", v)}

@@ -71,7 +71,7 @@ The dashboard opens directly to the configuration panel. Use the three tabs — 
 
 Once you are satisfied with your configuration, click **Save Changes**. The app will automatically install the bar on all product pages of your store — no theme edits or code changes required.
 
-> **Note:** If you want to disable the bar temporarily without losing your settings, toggle off **Enable Sticky Bar** in the **Behavior** tab and save.
+> **Note:** If you want to disable the bar temporarily without losing your settings, turn off both **Show on desktop** and **Show on mobile** in the **Visibility** card (below your plan) and save.
 
 ---
 
@@ -80,13 +80,13 @@ Once you are satisfied with your configuration, click **Save Changes**. The app 
 The dashboard is divided into two main areas:
 
 **Left — Configuration Panel**
-The configuration panel contains three tabs: **Styling**, **Layout**, and **Behavior**. Each tab groups related settings into collapsible section cards, making it easy to find what you need. Scroll through the panel to access all options.
+At the top are your plan card and the **Visibility** card. **Show on desktop** and **Show on mobile** choose which devices display the bar (a screen counts as mobile at or below the **Mobile Breakpoint** in Behavior → Mobile Settings). Turn both off to pause the bar without losing your settings. Below them, the configuration panel contains three tabs: **Styling**, **Layout**, and **Behavior**. Each tab groups related settings into collapsible section cards, making it easy to find what you need. Scroll through the panel to access all options.
 
 **Right — Live Preview**
 The live preview displays a simulated product page with your sticky bar applied in real time. Switch between **Desktop** and **Mobile** views using the toggle in the preview toolbar. Use the **Full Preview** button to open an expanded preview in a new browser tab.
 
 **Top — Header**
-The header displays the app logo and a **Help** button. Clicking "Help" reveals the app version number and support contact email.
+The header displays the app logo, a **Leave us a review** button (opens the app's BigCommerce App Marketplace page in a new tab), and a **Help** button. Clicking "Help" reveals the app version number and support contact email.
 
 **Bottom — Save Bar**
 Whenever you make changes, a floating save bar appears at the bottom of the screen. It gives you the option to **Save Changes** or **Discard** unsaved edits.
@@ -270,12 +270,11 @@ The **Behavior** tab controls when and how the sticky bar appears, how it animat
 
 ### Display Settings
 
-- **Enable Sticky Bar** — Master toggle to show or hide the sticky bar across your entire store. Disable this to turn off the bar without deleting your settings.
 - **Trigger Mode** — Choose when the bar appears on the page:
   - **Show on scroll (when Add to Cart leaves viewport)** — The bar appears only after the shopper has scrolled far enough that the original "Add to Cart" button on the product page is no longer visible. This is the recommended default — it avoids redundancy and feels natural to shoppers.
   - **Always visible on page load** — The bar is displayed as soon as the product page loads, regardless of scroll position.
   - **Show after time delay** — The bar appears after a set number of seconds. When selected, a **Delay** field appears (0–30 seconds).
-- **Scroll Threshold** — Visible when "Show on scroll" is selected. Sets the percentage of the page the shopper must scroll before the bar appears (10%–100%).
+- **Fallback Scroll Threshold** — Visible when "Show on scroll" is selected. Normally the bar appears the moment your theme's Add to Cart button scrolls out of view. If the app can't find that button (for example on a heavily customized theme), it uses this setting instead: the percentage of the page the shopper must scroll before the bar appears (10%–100%).
 - **Show Close Button** — Toggle on to display an "×" dismiss button on the bar, allowing shoppers to hide it. When enabled, a **Close Behavior** option appears:
   - **Hide temporarily (reappears on next scroll)** — The bar is dismissed until the page is scrolled again.
   - **Hide until page is scrolled again** — Similar to above; the bar reappears on the next scroll interaction.
@@ -311,7 +310,6 @@ Control what happens after a shopper clicks "Add to Cart" from the sticky bar.
 
 > **Note:** This section is collapsed by default. Click the section header to expand it.
 
-- **Show on Mobile** — Toggle off to hide the sticky bar entirely on mobile devices.
 - **Compact Mobile Layout** — Toggle on to display a smaller, more space-efficient version of the bar on mobile screens.
 - **Mobile Breakpoint** — The maximum screen width (in pixels) that is treated as "mobile." Screens narrower than this value will use the mobile layout. Adjustable from 320px to 1024px (default: 768px).
 
@@ -354,7 +352,7 @@ A toast notification will confirm whether the save was successful or if an error
 ## FAQs & Troubleshooting
 
 **The sticky bar is not appearing on my product pages.**
-- Ensure **Enable Sticky Bar** is toggled on in the Behavior tab and that your settings have been saved.
+- Ensure **Show on desktop** / **Show on mobile** are toggled on in the Visibility card and that your settings have been saved.
 - If **Trigger Mode** is set to "Show on scroll," scroll down the product page past the original "Add to Cart" button to trigger the bar.
 - Check the **Z-Index** value in the Advanced section. If another element on your storefront has a higher z-index, it may be covering the bar. Try increasing the z-index value.
 

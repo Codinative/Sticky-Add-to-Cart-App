@@ -87,9 +87,11 @@ export interface DefaultStickyBarConfig {
 
     // Behavior - Cart
     cartAction: "stayOnPage" | "redirect" | "drawer" | "flyToCart";
+    redirectOnSuccess: "stay" | "cart" | "checkout";
     showSuccessNotification: boolean;
     successMessage: string;
     // Behavior - Mobile
+    showOnDesktop: boolean;
     showOnMobile: boolean;
     mobileCompact: boolean;
     mobileBreakpoint: number;
@@ -226,7 +228,8 @@ interface SpacingConfig {
 // ─── Behavior Sub-configs ──────────────────────────────────────
 
 interface DisplayConfig {
-    enabled: boolean;
+    enabled: boolean; // legacy master switch; superseded by showOnDesktop + mobile.enabled
+    showOnDesktop?: boolean;
     triggerMode: "scroll" | "always" | "delay";
     triggerDelay: number;
     scrollThreshold: number;
@@ -240,6 +243,7 @@ interface AnimationConfig {
 
 interface CartBehaviorConfig {
     action: "stayOnPage" | "redirect" | "drawer" | "flyToCart";
+    redirectOnSuccess: "stay" | "cart" | "checkout";
     showSuccessNotification: boolean;
     successMessage: string;
 }

@@ -42,8 +42,11 @@ Called when the merchant opens the app inside the BC admin.
 
 - **Query**: `signed_payload_jwt`.
 - **Does**: `getBCVerify` → fetch the store's access token → `deleteStoreScript`
-  (**before** removing the store doc) → `removeSession` (delete store doc; remove store
-  from the user, deleting the user if it has no stores left).
+  (**before** removing the store doc) → `deleteStickyBarConfig` (Firestore does not
+  cascade-delete the `stickyBar` subcollection; failure is logged, not fatal) →
+  `cancelStoreSubscription` (cancels the Stripe subscription immediately; failure is
+  logged, not fatal; `billing/{storeHash}` is kept) → `removeSession` (delete store doc; remove store from the user, deleting the user if it
+  has no stores left).
 - **Response**: `200 {}`.
 - Source: [app/api/uninstall/route.ts](../app/api/uninstall/route.ts).
 
@@ -88,6 +91,26 @@ The script's BC config: name `"Sticky Add to Cart Bar"`, `location: footer`,
 - Source: [app/api/products/route.ts](../app/api/products/route.ts). Surfaced in the
   dashboard via `useProducts` (SWR) in [lib/hooks.ts](../lib/hooks.ts).
 
+### Billing (Stripe) — `/api/billing/*`
+
+$5/month plan with a 7-day trial (first subscription per store only). Logic in
+[lib/billing.ts](../lib/billing.ts); state in Firestore `billing/{storeHash}`
+([types/billing.ts](../types/billing.ts)), which is **not** deleted on uninstall so the
+Stripe customer is reused and the trial isn't granted twice. The bar is live only while
+the status is `trialing`, `active` or `past_due`.
+
+| Route | Auth | Does / Response |
+|---|---|---|
+| `GET /api/billing/status` | session | `200 { data: BillingStatus }` for the dashboard plan card |
+| `POST /api/billing/checkout` | session | Creates/reuses a Stripe Checkout session (subscription mode, trial if unused) → `200 { url }`; `409` if already subscribed |
+| `POST /api/billing/portal` | session | Stripe Customer Portal link → `200 { url }`; `404` if no Stripe customer yet |
+| `POST /api/billing/webhook` | Stripe signature | Verifies `stripe-signature` on the raw body; on `checkout.session.completed` and `customer.subscription.created/updated/deleted` re-fetches the subscription and writes it (`syncSubscription`). `400` bad signature, `500` → Stripe retries |
+
+The dashboard opens checkout/portal URLs in a **new tab** (Stripe refuses to render in
+the BigCommerce admin iframe); both return to `/billing/done`. Subscription state is
+written **only** by the webhook. Locally, forward events with
+`stripe listen --forward-to localhost:3000/api/billing/webhook`.
+
 ---
 
 ## Storefront (public · CORS `*`)
@@ -102,7 +125,9 @@ are **never** returned. Both support `OPTIONS` (preflight, `204`) and allow the
 - **Query**: `sid` (required).
 - **Response**: `200 { "config": StickyBarConfig }` with
   `Cache-Control: no-cache, no-store, must-revalidate` (so saved changes show on the
-  next load). `400` missing `sid`; `404` store or config not found.
+  next load). Without a usable subscription: `200 { "config": null, "reason":
+  "subscription_inactive" }` (the script then renders nothing). `400` missing `sid`;
+  `404` store or config not found.
 - Source: [app/api/storefront/config/route.ts](../app/api/storefront/config/route.ts).
 
 ### `GET /api/storefront/product`
@@ -132,16 +157,28 @@ knowledge.
   "image": { "url": "https://…", "alt": "Red Runner" },
   "prices": { "price": 89.0, "salePrice": 89.0, "basePrice": 99.0, "currencyCode": "USD" },
   "variants": [
-    { "variantKey": "Size:M,Color:Red,", "price": 89.0, "optionsIds": { "M": 222, "Red": 333 } }
+    { "variantKey": "Size:M,Color:Red,", "price": 89.0, "optionsIds": { "Size": 222, "Color": 333 } }
   ],
-  "variantLabels": { "Size": ["S", "M", "L"], "Color": ["Red", "Blue"] },
-  "options": [ { "id": 12, "name": "Size", "isVariantOption": true } ]
+  "variantLabels": { "Size": ["S", "M", "L"], "Color": ["Red", "Blue"], "Gift Wrap": ["No", "Yes"] },
+  "options": [
+    { "id": 12, "name": "Size", "isVariantOption": true, "isRequired": true },
+    { "id": 30, "name": "Gift Wrap", "isVariantOption": false, "isRequired": false,
+      "values": [ { "id": 301, "label": "No", "isDefault": true }, { "id": 302, "label": "Yes", "isDefault": false } ] }
+  ]
 }
 ```
 
 The script uses `variantKey` to match the shopper's selection and builds the
 add-to-cart URL `/cart.php?action=add&product_id={entityId}&attribute[{optionId}]={valueEntityId}…&qty={n}`
-from `options` + the matched variant's `optionsIds`.
+from `options` + the matched variant's `optionsIds` (keyed by option name, so two
+options with the same value label — e.g. `Size: Small` / `Breed size: Small` — keep
+separate ids).
+
+**Modifiers** (non-variant multiple-choice options, i.e. BigCommerce customizations)
+carry their own `values` and are also listed in `variantLabels`, so they render in
+the variants row. They don't affect variant matching or the displayed price; their
+`attribute[{optionId}]={valueId}` is appended separately. Checkbox, text, number,
+date and file modifiers are not supported in the bar.
 
 ---
 

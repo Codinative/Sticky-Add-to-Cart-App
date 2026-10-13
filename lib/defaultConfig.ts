@@ -52,8 +52,8 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
 
     // Variant Styling
     variantOptions: [
-      { name: "Size", displayType: "rectangleList" },
-      { name: "Color", displayType: "swatch" },
+      { name: "Size", displayType: "dropdown" },
+      { name: "Color", displayType: "dropdown" },
     ],
     variantShowLabels: true,
     variantActiveColor: "#2563EB",
@@ -84,7 +84,7 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
     barOffset: 0,
     barWidthMode: "full",
     barMaxWidth: 1200,
-    contentMaxWidth: 0,
+    contentMaxWidth: 1400,
     contentAlignment: "spaceBetween",
     verticalAlignment: "center",
 
@@ -99,9 +99,11 @@ export const defaultStickyBarConfig: DefaultStickyBarConfig = {
 
     // Behavior - Cart
     cartAction: "stayOnPage",
+    redirectOnSuccess: "cart",
     showSuccessNotification: true,
     successMessage: "Added to cart successfully!",
     // Behavior - Mobile
+    showOnDesktop: true,
     showOnMobile: true,
     mobileCompact: true,
     mobileBreakpoint: 768,

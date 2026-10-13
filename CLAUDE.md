@@ -39,7 +39,12 @@ DASHBOARD (admin iframe, JWT `context` in URL)
 
 INSTALL  GET /api/auth   → OAuth → setStore/setUser → save default config → install script
 LOAD     GET /api/load   → verify signed JWT → refresh session → redirect to dashboard
-UNINSTALL GET /api/uninstall → delete script → remove store + user docs
+UNINSTALL GET /api/uninstall → delete script → delete bar config → cancel Stripe sub → remove store + user docs
+
+BILLING (Stripe, $5/mo, 7-day trial — lib/billing.ts, Firestore billing/{storeHash})
+  dashboard BillingCard → POST /api/billing/checkout | portal → Stripe page in NEW TAB
+  Stripe → POST /api/billing/webhook (signature-verified) → syncSubscription → Firestore
+  /api/storefront/config returns config:null unless status is trialing|active|past_due
 
 STOREFRONT (sticky-bar.min.js?sid={uniqueStoreId}&app={BASE_URL})
   GET /api/storefront/config?sid=…           → bar config (CORS *, no-cache)
@@ -100,13 +105,19 @@ changes via `/preview` (it loads the real `sticky-bar.min.js`) or on a real stor
 
 - **Rebuild after editing the storefront script.** `public/sticky-bar.min.js` is what
   stores load; editing `scripts/storefront/sticky-bar.js` alone changes nothing until
-  `npm run build:storefront` runs and the new file is deployed.
+  `npm run build:storefront` runs and the new file is deployed. The dashboard live
+  preview and `/preview` also run this built file (iframe built by
+  [lib/previewSrcdoc.ts](lib/previewSrcdoc.ts); live settings arrive via
+  `postMessage` when `window.__SATC_PREVIEW__` is set), so rebuild to see changes there too.
 - **Two flatten implementations.** `lib/configConverter.ts` (dashboard) and
   `flattenConfig` in `sticky-bar.js` (storefront) must agree. Update both.
 - **`.env` holds a Firebase admin private key + the BC client secret** — never print,
   commit, or paste them into external tools. Update `.env.example` when adding a var.
 - **HTTPS callbacks required.** In dev use a tunnel (ngrok); keep `BASE_URL` /
   `AUTH_CALLBACK` and the BC app's callback URL all in sync with the tunnel URL.
+- **Billing state is written only by the Stripe webhook.** Locally run
+  `stripe listen --forward-to localhost:3000/api/billing/webhook` alongside `npm run dev`,
+  or subscriptions never activate. Stores without a trial/subscription get no bar.
 - **`db:setup` is dead** — `scripts/db.js` does not exist; don't rely on it.
 - **The bar shows only on product pages**, decided server-side by the GraphQL
   `route(path:)` lookup in `/api/storefront/product` — not by URL-sniffing in the browser.
