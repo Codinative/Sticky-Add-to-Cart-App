@@ -3,6 +3,8 @@ node_modules/
 
 # Environment files
 .env
+.env.*
+!.env.example
 
 # Next.js build output
 .next/
@@ -26,6 +28,9 @@ turbo.log
 # Firebase local/emulator data
 .firebase/
 firestore-debug.log
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
 storage-debug.log
 
 # Coverage reports

@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
             mode: 'subscription',
             customer: customerId,
             line_items: [{ price: getPriceId(), quantity: 1 }],
+            allow_promotion_codes: true,
             client_reference_id: storeHash,
             metadata: { storeHash },
             subscription_data: {
