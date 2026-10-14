@@ -1,0 +1,45 @@
+# Firebase App Hosting config - https://firebase.google.com/docs/app-hosting/configure
+# Secrets live in Cloud Secret Manager (set with `firebase apphosting:secrets:set`),
+# never in this file.
+
+runConfig:
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  # -- BigCommerce app
+  - variable: CLIENT_ID
+    secret: CLIENT_ID
+  - variable: CLIENT_SECRET
+    secret: CLIENT_SECRET
+  # Backend URL - verify it matches the one shown in Firebase Console -> App Hosting.
+  - variable: BASE_URL
+    value: https://stickyaddtocart--bc-sticky-notes-app.us-central1.hosted.app
+  - variable: AUTH_CALLBACK
+    value: https://stickyaddtocart--bc-sticky-notes-app.us-central1.hosted.app/api/auth
+  - variable: JWT_KEY
+    secret: JWT_KEY
+
+  # -- Firestore
+  - variable: DB_TYPE
+    value: firebase
+  - variable: FIRE_ADMIN_PROJECT_ID
+    secret: FIRE_ADMIN_PROJECT_ID
+  - variable: FIRE_ADMIN_CLIENT_EMAIL
+    secret: FIRE_ADMIN_CLIENT_EMAIL
+  - variable: FIRE_ADMIN_PRIVATE_KEY
+    secret: FIRE_ADMIN_PRIVATE_KEY
+
+  # -- Stripe billing
+  - variable: STRIPE_SECRET_KEY
+    secret: STRIPE_SECRET_KEY
+  - variable: STRIPE_WEBHOOK_SECRET
+    secret: STRIPE_WEBHOOK_SECRET
+  - variable: STRIPE_PRICE_ID
+    value: price_1UQSvx7kG2wpLb3gOYkgMtQJ
+
+  # NEXT_PUBLIC_REVIEW_URL: add once the marketplace listing exists (empty values
+  # are rejected). It is inlined at build time, so give it availability BUILD + RUNTIME.
