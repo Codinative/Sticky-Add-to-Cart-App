@@ -9,10 +9,45 @@ the project uses [Semantic Versioning](https://semver.org/). Dates are ISO `YYYY
 
 ## [Unreleased]
 
+### Changed
+- [USER-GUIDE.md](USER-GUIDE.md): new Plan & Billing section and trial step; removed the
+  retired Auto-Hide setting; documented Redirect on success; corrected live-preview details.
+- README / dev-workflow: Stripe env vars and Firebase App Hosting deployment.
+
+---
+
+## [1.0.0] — 2026-10-13 (first production release)
+
 ### Added
+- **Stripe billing** — $5/month plan with a 7-day free trial (once per store):
+  checkout, Customer Portal, status and webhook routes, dashboard plan card, and a
+  `/billing/done` landing page. Promo codes can be applied at checkout.
+- **Visibility card** — separate **Show on desktop** / **Show on mobile** switches.
+- **Redirect on success** — stay on the page, go to the cart, or go to checkout.
+- Live preview and `/preview` now run the real built storefront script in an iframe.
+- Content Max Width presets (1140 / 1200 / 1280 / 1400 / 1600).
+- Firebase App Hosting deploy config (`apphosting.yaml`, `firebase.json`, `.firebaserc`).
 - Professional documentation set: rewritten [README.md](README.md), repo quick
   reference [CLAUDE.md](CLAUDE.md), `.claude/skills/` (architecture, storefront-script,
   dev-workflow, debugging), `docs/CONFIGURATION.md`, `docs/API.md`, and `.env.example`.
+
+### Changed
+- The bar is served only while the store's trial or subscription is active
+  (`trialing`, `active`, `past_due`).
+- Scroll Threshold is now a fallback, used only when the theme's Add to Cart button
+  can't be found.
+
+### Removed
+- **Enable Sticky Bar** master toggle and Behavior → **Show on Mobile** (replaced by the
+  Visibility card).
+- **Auto-Hide After Add to Cart**.
+
+### Fixed
+- Uninstall now also deletes `stores/{storeHash}/stickyBar/config` and cancels the
+  Stripe subscription.
+
+### Security
+- `npm audit fix` for production dependencies (0 known vulnerabilities).
 
 ---
 

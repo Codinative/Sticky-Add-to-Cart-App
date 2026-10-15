@@ -75,6 +75,7 @@ to a store. See [docs/API.md](docs/API.md) for the full request lifecycle.
 - **Firebase Firestore** (`firebase-admin`) — store sessions + bar config
 - **node-bigcommerce** — OAuth + v3 REST; raw `fetch` for the Scripts API and the GraphQL Storefront API
 - **jsonwebtoken** — signed `context` tokens for the embedded iframe
+- **Stripe** — $5/month subscription with a 7-day trial (Checkout, Customer Portal, webhooks)
 - **Tailwind CSS v4** + **styled-components** · **@headlessui/react** · **SWR**
 - **esbuild** — bundles/minifies the storefront script to a single IIFE
 
@@ -132,12 +133,15 @@ Copy [.env.example](.env.example) and fill it in. All variables:
 | `FIRE_ADMIN_PROJECT_ID` | yes | Firebase service-account project ID |
 | `FIRE_ADMIN_CLIENT_EMAIL` | yes | Firebase service-account client email |
 | `FIRE_ADMIN_PRIVATE_KEY` | yes | Firebase service-account private key (`\n` newlines are unescaped at runtime) |
+| `STRIPE_SECRET_KEY` | yes | Stripe secret key (`sk_test_…` until going live) |
+| `STRIPE_WEBHOOK_SECRET` | yes | Signing secret of the `/api/billing/webhook` endpoint (locally: printed by `stripe listen`) |
+| `STRIPE_PRICE_ID` | yes | The recurring monthly Price the subscription uses |
 | `NEXT_PUBLIC_REVIEW_URL` | no | App Marketplace review link for the dashboard's "Leave us a review" button (hidden in production while empty). Inlined at build time — redeploy after changing |
 | `API_URL` | no | Override the BigCommerce API base (used **only** with `LOGIN_URL`, for non-prod BC environments) |
 | `LOGIN_URL` | no | Override the BigCommerce login base (used **only** with `API_URL`) |
 
 > `.env` is gitignored. Never commit real secrets — `FIRE_ADMIN_PRIVATE_KEY` and
-> `CLIENT_SECRET` in particular. Use `.env.example` as the template.
+> `CLIENT_SECRET`, and `STRIPE_SECRET_KEY` in particular. Use `.env.example` as the template.
 
 ## Scripts
 
@@ -158,7 +162,13 @@ Copy [.env.example](.env.example) and fill it in. All variables:
 
 ## Deployment
 
-Deploy to Vercel (or any Node host). On each environment set every variable from the
+Production runs on **Firebase App Hosting** (backend `stickyaddtocart`, project
+`bc-sticky-notes-app`) at `https://stickyaddtocart--bc-sticky-notes-app.us-central1.hosted.app`.
+Runtime settings and the env mapping live in [apphosting.yaml](apphosting.yaml); secrets
+are stored in Cloud Secret Manager (`firebase apphosting:secrets:set <NAME>`), never in
+the repo. The Stripe webhook endpoint must point at `{BASE_URL}/api/billing/webhook`.
+
+Any other Node host also works. On each environment set every variable from the
 table above; `BASE_URL` and `AUTH_CALLBACK` must point at that environment's public
 domain, and the BigCommerce app's OAuth callback must match `AUTH_CALLBACK`. Because
 the injected script's `src` is built from `BASE_URL`, a misconfigured `BASE_URL`

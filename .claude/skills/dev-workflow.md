@@ -52,7 +52,8 @@ Then, with `{TUNNEL}` = the ngrok https URL:
    - Auth callback → `{TUNNEL}/api/auth`
    - Load callback → `{TUNNEL}/api/load`
    - Uninstall callback → `{TUNNEL}/api/uninstall`
-   - Scopes include **Content / Scripts (read/modify)** and **Products (read)**.
+   - Scopes (as set on the production app): **Content (modify)**, **Products (modify)**,
+     **Carts (modify)**, **Storefront API Tokens (generate)**; everything else None.
 3. Restart `npm run dev` (env changes require a restart).
 4. Install the app from the store's control panel → it hits `/api/auth`, stores the
    session, saves the default config, and installs the storefront script.
@@ -87,7 +88,9 @@ ignore it. Firestore needs only the service-account credentials.
 
 ## Deploy
 
-Deploy to Vercel (or any Node host). Per environment:
+Production is Firebase App Hosting (backend `stickyaddtocart`, project
+`bc-sticky-notes-app`); env mapping in `apphosting.yaml`, secrets in Cloud Secret
+Manager (`firebase apphosting:secrets:set <NAME>`). Any Node host works. Per environment:
 
 - Set every env var; `BASE_URL` and `AUTH_CALLBACK` point at that environment's
   public domain, and the BC app's callback URLs must match.

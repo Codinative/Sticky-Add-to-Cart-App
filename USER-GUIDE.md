@@ -1,6 +1,6 @@
 # Sticky Add to Cart — User Guide
 
-**Estimated read time: 12 min** · **Last updated: February 2026**
+**Estimated read time: 12 min** · **Last updated: October 2026**
 
 ---
 
@@ -9,27 +9,28 @@
 1. [Introduction](#introduction)
 2. [Getting Started](#getting-started)
 3. [Dashboard Overview](#dashboard-overview)
-4. [Styling Tab](#styling-tab)
+4. [Plan & Billing](#plan--billing)
+5. [Styling Tab](#styling-tab)
    - [Bar Appearance](#bar-appearance)
    - [Typography & Colors](#typography--colors)
    - [Button Styling](#button-styling)
    - [Product Image](#product-image)
    - [Variant Selector](#variant-selector)
    - [Quantity Picker](#quantity-picker)
-5. [Layout Tab](#layout-tab)
+6. [Layout Tab](#layout-tab)
    - [Element Arrangement](#element-arrangement)
    - [Position on Page](#position-on-page)
    - [Width & Alignment](#width--alignment)
    - [Spacing](#spacing)
-6. [Behavior Tab](#behavior-tab)
+7. [Behavior Tab](#behavior-tab)
    - [Display Settings](#display-settings)
    - [Animation](#animation)
    - [Cart Behavior](#cart-behavior)
    - [Mobile Settings](#mobile-settings)
    - [Advanced](#advanced)
-7. [Live Preview](#live-preview)
-8. [Saving Your Settings](#saving-your-settings)
-9. [FAQs & Troubleshooting](#faqs--troubleshooting)
+8. [Live Preview](#live-preview)
+9. [Saving Your Settings](#saving-your-settings)
+10. [FAQs & Troubleshooting](#faqs--troubleshooting)
 
 ---
 
@@ -50,7 +51,7 @@ With a powerful visual configurator, real-time live preview, and zero coding req
 
 ## Getting Started
 
-Setting up Sticky Add to Cart takes just a few minutes. Follow these four steps to get your bar live on your store.
+Setting up Sticky Add to Cart takes just a few minutes. Follow these five steps to get your bar live on your store.
 
 ### Step 1 — Install the App
 
@@ -63,11 +64,19 @@ Setting up Sticky Add to Cart takes just a few minutes. Follow these four steps 
 1. From your BigCommerce control panel, navigate to **Apps > My Apps**.
 2. Click on **Sticky Add to Cart** to launch the app dashboard.
 
-### Step 3 — Configure Your Bar
+### Step 3 — Start Your Free Trial
+
+1. In the plan card at the top of the dashboard, click **Start 7-day free trial**.
+2. Stripe Checkout opens in a new tab. Enter your card details — you won't be charged until the trial ends, then the plan is $5/month. Promo codes can be entered here.
+3. Close the tab and return to the app. The plan card updates to show your trial.
+
+The bar is shown on your storefront only while your trial or plan is active. See [Plan & Billing](#plan--billing).
+
+### Step 4 — Configure Your Bar
 
 The dashboard opens directly to the configuration panel. Use the three tabs — **Styling**, **Layout**, and **Behavior** — to customize the sticky bar to your preferences. Every change is reflected instantly in the Live Preview panel on the right.
 
-### Step 4 — Save & Go Live
+### Step 5 — Save & Go Live
 
 Once you are satisfied with your configuration, click **Save Changes**. The app will automatically install the bar on all product pages of your store — no theme edits or code changes required.
 
@@ -90,6 +99,30 @@ The header displays the app logo, a **Leave us a review** button (opens the app'
 
 **Bottom — Save Bar**
 Whenever you make changes, a floating save bar appears at the bottom of the screen. It gives you the option to **Save Changes** or **Discard** unsaved edits.
+
+---
+
+## Plan & Billing
+
+Sticky Add to Cart costs **$5/month** after a **7-day free trial**. Each store gets one free trial. Billing is handled by Stripe; checkout and the billing portal open in a new browser tab.
+
+The plan card at the top of the dashboard shows your status and the next action:
+
+| Status | What it means | Button |
+|---|---|---|
+| **No active plan** | The bar is hidden on your store until you subscribe. | **Start 7-day free trial** (or **Subscribe · $5/month** if your store has already used its trial) |
+| **Free trial · N days left** | The bar is live. Billing starts on the date shown. | **Manage billing** |
+| **Active · $5/month** | The bar is live. Shows your next renewal date. | **Manage billing** |
+| **Payment failed** | The bar stays live while Stripe retries the payment. | **Update card** |
+| **Payment required** | The bar is hidden until payment is completed. | **Manage billing** |
+
+**Manage billing** opens the Stripe Customer Portal, where you can update your card, download invoices, or cancel.
+
+- **Cancelling** — The bar keeps running until the end of the current trial or billing period; the plan card shows the date it stops.
+- **Uninstalling** — Removing the app cancels your subscription immediately, with no further charges.
+- **Reinstalling** — Your billing account is kept, so you can subscribe again, but the free trial is not granted a second time.
+
+> **Note:** Your bar settings are kept whatever your plan status, so the bar comes back exactly as you left it when you resubscribe.
 
 ---
 
@@ -301,8 +334,11 @@ Control the motion effects when the bar enters and exits the screen.
 
 Control what happens after a shopper clicks "Add to Cart" from the sticky bar.
 
+- **Redirect on success** — Choose where the shopper goes after an item is added:
+  - **Stay on the page** — The shopper remains on the product page.
+  - **Go to Cart page** — The shopper is taken to the cart (default).
+  - **Go to Checkout page** — The shopper is taken straight to checkout.
 - **Show Success Notification** — Toggle on to display a confirmation message after an item is successfully added to the cart. When enabled, a **Success Message** text field appears where you can customize the notification text (default: "Added to cart successfully!").
-- **Auto-Hide After Add to Cart** — Toggle on to automatically hide the sticky bar after a successful add-to-cart action. When enabled, a **Hide After** field appears to set the delay (1–30 seconds) before the bar is hidden.
 
 ---
 
@@ -328,8 +364,8 @@ Control what happens after a shopper clicks "Add to Cart" from the sticky bar.
 
 The **Live Preview** panel on the right side of the dashboard shows a real-time simulation of how your sticky bar will look on a product page.
 
-- **Desktop / Mobile toggle** — Switch between desktop and mobile viewpoints using the monitor and smartphone icons in the preview toolbar. The mobile view simulates a 375px-wide device screen and scales the bar elements proportionally.
-- **Active / Inactive status indicator** — A badge in the preview toolbar shows whether the bar is currently enabled or disabled based on your settings.
+- **Desktop / Mobile toggle** — Switch between desktop and mobile viewpoints using the monitor and smartphone icons in the preview toolbar. The preview runs the same script your storefront uses, at a real 1280px (desktop) or 390px (mobile) width scaled to fit the panel, so what you see matches what shoppers get.
+- **Active / Inactive status indicator** — A badge in the preview toolbar shows **Active** when at least one of **Show on desktop** / **Show on mobile** is on, and **Inactive** when both are off. It does not reflect your plan status — check the plan card for that.
 - **Full Preview button** — Opens a full-page, expanded preview in a new browser tab. This is useful for reviewing the bar at your actual screen resolution before saving.
 
 > **Note:** The live preview uses a sample product ("Premium Wireless Headphones") with placeholder data to demonstrate how real product information will appear. The actual product name, price, and images displayed in your store will come from BigCommerce automatically.
@@ -352,6 +388,7 @@ A toast notification will confirm whether the save was successful or if an error
 ## FAQs & Troubleshooting
 
 **The sticky bar is not appearing on my product pages.**
+- Check the plan card. The bar only shows while your free trial or plan is active (including **Payment failed**, while Stripe retries).
 - Ensure **Show on desktop** / **Show on mobile** are toggled on in the Visibility card and that your settings have been saved.
 - If **Trigger Mode** is set to "Show on scroll," scroll down the product page past the original "Add to Cart" button to trigger the bar.
 - Check the **Z-Index** value in the Advanced section. If another element on your storefront has a higher z-index, it may be covering the bar. Try increasing the z-index value.
@@ -374,6 +411,9 @@ A toast notification will confirm whether the save was successful or if an error
 **The bar style doesn't match my theme after saving.**
 - Use the **Font Family** setting in the Styling > Typography section and set it to **Store Default** to inherit your theme's font automatically.
 - Use the **Custom CSS Class** in Advanced to apply additional theme-specific overrides via your theme's stylesheet.
+
+**How do I cancel my subscription?**
+- Click **Manage billing** in the plan card and cancel in the Stripe portal. The bar keeps running until the end of the period you've paid for. Uninstalling the app also cancels immediately.
 
 **How do I contact support?**
 - Reach our team at [info@codinative.com](mailto:info@codinative.com). Please include your store URL and a description of the issue for the fastest response.
