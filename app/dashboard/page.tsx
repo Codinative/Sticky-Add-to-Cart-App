@@ -202,8 +202,8 @@ export default function StickyBarDashboard() {
               <Image
                 src="/navbar-logo.png"
                 alt="Sticky Add to Cart"
-                width={240}
-                height={60}
+                width={848}
+                height={283}
                 className="h-10 sm:h-14 w-auto object-contain"
                 priority
               />
