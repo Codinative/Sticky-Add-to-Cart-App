@@ -47,6 +47,8 @@ With a powerful visual configurator, real-time live preview, and zero coding req
 - Set smart trigger behavior — show the bar on scroll, always, or after a timed delay
 - Preview every change in real time before publishing to your live storefront
 
+> **Note:** Each plan works on your store's default storefront only. On stores with multiple storefronts (Multi-Storefront), the bar appears only on the default storefront.
+
 ---
 
 ## Getting Started
@@ -105,6 +107,8 @@ Whenever you make changes, a floating save bar appears at the bottom of the scre
 ## Plan & Billing
 
 Sticky Add to Cart costs **$5/month** after a **7-day free trial**. Each store gets one free trial. Billing is handled by Stripe; checkout and the billing portal open in a new browser tab.
+
+> **Note:** Each plan works on your store's default storefront only. The app connects to it automatically on install; other storefronts on the same store don't show the bar.
 
 The plan card at the top of the dashboard shows your status and the next action:
 
@@ -392,6 +396,9 @@ A toast notification will confirm whether the save was successful or if an error
 - Ensure **Show on desktop** / **Show on mobile** are toggled on in the Visibility card and that your settings have been saved.
 - If **Trigger Mode** is set to "Show on scroll," scroll down the product page past the original "Add to Cart" button to trigger the bar.
 - Check the **Z-Index** value in the Advanced section. If another element on your storefront has a higher z-index, it may be covering the bar. Try increasing the z-index value.
+
+**Can I use the bar on more than one storefront?**
+No. Each plan works on your store's default storefront only. If your store uses Multi-Storefront, the bar shows only on the default storefront (channel 1); your other storefronts won't show it.
 
 **The bar appears but the Add to Cart button isn't working.**
 - Ensure your BigCommerce product pages are set up correctly and that the original Add to Cart button on the product page is functional.

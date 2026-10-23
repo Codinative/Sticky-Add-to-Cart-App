@@ -54,7 +54,8 @@ export async function setStore(session: SessionProps) {
   const ref = db.collection('stores').doc(storeHash);
   const data = { accessToken, adminId: id, scope };
  
-  await ref.set(data);
+  // merge: keep uniqueStoreId when the app is re-authorized (scope change)
+  await ref.set(data, { merge: true });
 
   return ref.id;
 }

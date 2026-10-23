@@ -61,7 +61,10 @@ export function getBCVerify({ signed_payload_jwt }: QueryParams) {
 }
 
 export async function setSession(session: SessionProps) {
-  const storeHash = await db.setStore(session);
+  // setStore only writes on install (it has the access token); on load, still
+  // record the user so other staff accounts are tracked for remove_user
+  const storeHash = await db.setStore(session)
+    || (session?.context || session?.sub || '').split('/')[1];
 
   if (!storeHash) return null;
   

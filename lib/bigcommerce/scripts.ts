@@ -2,6 +2,8 @@ import { getOrCreateStoreUniqueId } from "@/lib/dbs/firebase";
 
 const { BASE_URL } = process.env;
 const SCRIPT_NAME = "Sticky Add to Cart Bar";
+// One plan = one storefront: the bar always runs on the store's default channel
+const DEFAULT_CHANNEL_ID = 1;
 
 // ─── Low-level: Call BigCommerce Scripts API ─────────────────────
 
@@ -70,6 +72,7 @@ export async function installOrUpdateScript(
             location: "footer",
             visibility: "storefront",
             kind: "src",
+            consent_category: "functional",
             enabled: true,
         };
 
@@ -86,8 +89,8 @@ export async function installOrUpdateScript(
             console.log("Script updated successfully for store:", storeHash);
             return { success: true, action: "updated" };
         } else {
-            // Create new script
-            const res = await bcScriptsRequest("POST", storeHash, accessToken, "", scriptPayload);
+            // Create new script on the default storefront channel only
+            const res = await bcScriptsRequest("POST", storeHash, accessToken, "", { ...scriptPayload, channel_id: DEFAULT_CHANNEL_ID });
             const data = await res.json();
 
             if (!res.ok) {

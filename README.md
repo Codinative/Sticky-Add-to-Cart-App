@@ -75,7 +75,8 @@ to a store. See [docs/API.md](docs/API.md) for the full request lifecycle.
 - **Firebase Firestore** (`firebase-admin`) — store sessions + bar config
 - **node-bigcommerce** — OAuth + v3 REST; raw `fetch` for the Scripts API and the GraphQL Storefront API
 - **jsonwebtoken** — signed `context` tokens for the embedded iframe
-- **Stripe** — $5/month subscription with a 7-day trial (Checkout, Customer Portal, webhooks)
+- **Stripe** — $5/month subscription with a 7-day trial (Checkout, Customer Portal, webhooks).
+  Each plan works on your store's default storefront only. (channel 1 — script, storefront token and GraphQL endpoint are bound to it)
 - **Tailwind CSS v4** + **styled-components** · **@headlessui/react** · **SWR**
 - **esbuild** — bundles/minifies the storefront script to a single IIFE
 

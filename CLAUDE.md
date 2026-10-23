@@ -40,6 +40,8 @@ DASHBOARD (admin iframe, JWT `context` in URL)
 INSTALL  GET /api/auth   → OAuth → setStore/setUser → save default config → install script
 LOAD     GET /api/load   → verify signed JWT → refresh session → redirect to dashboard
 UNINSTALL GET /api/uninstall → delete script → delete bar config → cancel Stripe sub → remove store + user docs
+REMOVE_USER GET /api/remove_user → verify signed JWT → drop store from users/{id} (multi-user)
+ONE STOREFRONT  one plan = the default channel (channel_id 1) only; script + GraphQL token bound to it, no merchant choice
 
 BILLING (Stripe, $5/mo, 7-day trial — lib/billing.ts, Firestore billing/{storeHash})
   dashboard BillingCard → POST /api/billing/checkout | portal → Stripe page in NEW TAB

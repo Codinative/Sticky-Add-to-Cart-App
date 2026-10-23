@@ -66,7 +66,7 @@ export async function getOrCreateStorefrontToken(
                 "Accept": "application/json",
             },
             body: JSON.stringify({
-                channel_id: 1,
+                channel_id: 1, // default storefront — the only channel the bar runs on
                 expires_at: expiresAtUnix,
                 allowed_cors_origins: [],
             }),

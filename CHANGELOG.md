@@ -9,7 +9,15 @@ the project uses [Semantic Versioning](https://semver.org/). Dates are ISO `YYYY
 
 ## [Unreleased]
 
+### Added
+- `GET /api/remove_user` callback for "Enable multiple users"; staff users opening
+  the app are now recorded so they can be removed.
+
 ### Changed
+- **Each plan works on your store's default storefront only.** The script is created with `channel_id: 1`
+  and `consent_category: functional`; documented in the User Guide (intro, Plan &
+  Billing, FAQ) and API reference.
+- Re-authorizing the app no longer wipes the store's `uniqueStoreId` (merge on `setStore`).
 - [USER-GUIDE.md](USER-GUIDE.md): new Plan & Billing section and trial step; removed the
   retired Auto-Hide setting; documented Redirect on success; corrected live-preview details.
 - README / dev-workflow: Stripe env vars and Firebase App Hosting deployment.

@@ -52,6 +52,16 @@ Called when the merchant opens the app inside the BC admin.
 
 ---
 
+### `GET /api/remove_user` — remove-user callback
+
+- **Called by**: BigCommerce when a store admin revokes a staff user's access to the app
+  (required when **Enable multiple users** is on in the Developer Portal).
+- **Query**: `signed_payload_jwt`, verified with `getBCVerify`.
+- **Does**: removes the store from `users/{userId}` (deleting the user doc when it has no
+  stores left). Store, config, script and billing are untouched.
+- **Response**: `200 {}`.
+- Source: [app/api/remove_user/route.ts](../app/api/remove_user/route.ts).
+
 ## Dashboard (session-gated)
 
 All require `?context={jwt}`; without a valid session they return
@@ -82,7 +92,12 @@ Source: [app/api/bc-scripts/route.ts](../app/api/bc-scripts/route.ts).
 
 The script's BC config: name `"Sticky Add to Cart Bar"`, `location: footer`,
 `load_method: defer`, `visibility: storefront`, `auto_uninstall: true`, `kind: src`,
+`consent_category: functional`, `channel_id: 1`,
 `src = {BASE_URL}/sticky-bar.min.js?sid={uniqueStoreId}&app={BASE_URL}`.
+
+**One plan covers one storefront — the store's default channel (`channel_id: 1`).**
+The merchant can't pick another channel; the script, the GraphQL storefront token and
+the GraphQL endpoint are all bound to channel 1. Other storefronts never get the bar.
 
 ### `GET /api/products` — catalog summary
 
