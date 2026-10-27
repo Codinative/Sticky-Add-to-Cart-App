@@ -224,6 +224,12 @@
     }
   }
 
+  // Variant options always need a value; modifiers only when the merchant made them required
+  function isOptionRequired(name) {
+    var mod = getModifier(name);
+    return mod ? !!mod.isRequired : true;
+  }
+
   function getVariantDefault(name) {
     var opts = (product && product.options) || [];
     for (var i = 0; i < opts.length; i++) {
@@ -902,10 +908,9 @@
 
   function renderVariantDropdown(optionName, values) {
     var fontSize = Math.max((config.fontSize || 14) - 2, 11) + "px";
-    // The option name is only the closed field's placeholder, never a choice. An
-    // optional modifier gets an explicit "None" so the shopper can clear it.
-    var mod = getModifier(optionName);
-    var options = mod && !mod.isRequired ? [{ value: "", label: "None" }] : [];
+    // Only the store's own values are listed. The option name is just the closed
+    // field's placeholder, never a choice — a merchant who wants "None" adds it as a value.
+    var options = [];
     values.forEach(function (val) {
       options.push({ value: val, label: val, disabled: !isValueInStock(optionName, val) });
     });
@@ -1119,7 +1124,15 @@
             fontWeight: "500",
             whiteSpace: "nowrap",
           },
-        }, optionName + ":");
+        }, optionName);
+        if (isOptionRequired(optionName)) {
+          labelEl.appendChild(el("span", {
+            "aria-hidden": "true",
+            title: "Required",
+            style: { color: "#EF4444", marginLeft: "2px" },
+          }, "*"));
+        }
+        labelEl.appendChild(document.createTextNode(":"));
         row.appendChild(labelEl);
       }
 

@@ -25,7 +25,8 @@ the project uses [Semantic Versioning](https://semver.org/). Dates are ISO `YYYY
 ### Fixed (QA round)
 - **Variant dropdowns** are now a custom list: opens up or down where there is room,
   max-height with scroll, stays inside the viewport (was cut off on mobile). The
-  placeholder is no longer a selectable option; optional modifiers get a "None" choice.
+  placeholder is no longer a selectable option; lists show only the store's own values
+  (no added "None"/"Choose" entries). Required options are marked with a red `*`.
   The field keeps a fixed width, so picking a value no longer shifts the controls.
 - **Stacked layout** is chosen by measuring whether the single row fits (any width),
   replacing the fixed 940px breakpoint: no uneven wrapping at 941–1170px, one row on
