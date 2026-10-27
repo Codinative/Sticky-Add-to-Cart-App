@@ -169,10 +169,12 @@ knowledge.
 {
   "entityId": 123,
   "name": "Red Runner",
+  "inStock": true,                     // false → bar button shows "Out of stock"
   "image": { "url": "https://…", "alt": "Red Runner" },
-  "prices": { "price": 89.0, "salePrice": 89.0, "basePrice": 99.0, "currencyCode": "USD" },
+  "prices": { "price": 89.0, "salePrice": 89.0, "basePrice": 99.0, "currencyCode": "USD",
+              "currency": { "symbol": "$", "symbolPlacement": "LEFT", "decimalToken": ".", "thousandsToken": ",", "decimalPlaces": 2 } },
   "variants": [
-    { "variantKey": "Size:M,Color:Red,", "price": 89.0, "optionsIds": { "Size": 222, "Color": 333 } }
+    { "variantKey": "Size:M,Color:Red,", "price": 89.0, "optionsIds": { "Size": 222, "Color": 333 }, "inStock": true }
   ],
   "variantLabels": { "Size": ["S", "M", "L"], "Color": ["Red", "Blue"], "Gift Wrap": ["No", "Yes"] },
   "options": [

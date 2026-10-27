@@ -272,7 +272,8 @@ export default function StickyBarDashboard() {
 
         {/* Main Content */}
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:h-[calc(100vh-128px)]">
+          {/* Fits the viewport; on short screens (high zoom) the page scrolls instead of crushing the preview */}
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:h-[calc(100vh-128px)] lg:min-h-[560px]">
             {/* Left: Config Panel */}
             <div className="w-full lg:w-[400px] lg:shrink-0 flex flex-col gap-4 lg:h-full">
               {/* Plan / subscription */}
@@ -358,7 +359,7 @@ export default function StickyBarDashboard() {
               </div>
 
               {/* Preview Area */}
-              <div className="flex-1 bg-white rounded-lg border border-gray-200 p-4 sm:p-6 overflow-hidden min-h-[300px]"
+              <div className="flex-1 min-h-0 bg-white rounded-lg border border-gray-200 p-4 sm:p-6 overflow-hidden"
                 style={{
                   backgroundImage: "radial-gradient(circle at 1px 1px, #E2E8F0 1px, transparent 0)",
                   backgroundSize: "20px 20px",

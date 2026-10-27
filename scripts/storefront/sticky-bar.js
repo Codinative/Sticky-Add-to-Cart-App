@@ -214,12 +214,22 @@
     var labels = product.variantLabels;
     for (var name in labels) {
       if (labels.hasOwnProperty(name)) {
-        // Modifiers start on the merchant's default value, if any
+        // Start on the merchant's default value, if any — as the theme's form does
         var mod = getModifier(name);
         var def = mod && mod.values.filter(function (v) { return v.isDefault; })[0];
-        selectedVariants[name] = def ? def.label : "";
+        var variantDefault = !mod && getVariantDefault(name);
+        selectedVariants[name] = def ? def.label
+          : variantDefault && labels[name].indexOf(variantDefault) !== -1 ? variantDefault : "";
       }
     }
+  }
+
+  function getVariantDefault(name) {
+    var opts = (product && product.options) || [];
+    for (var i = 0; i < opts.length; i++) {
+      if (opts[i].name === name && opts[i].isVariantOption) return opts[i].defaultValue || "";
+    }
+    return "";
   }
 
   // Modifier = a non-variant multiple-choice option (BigCommerce "customization").
@@ -250,6 +260,17 @@
     return keys.every(function (key) { return haystack.indexOf("," + key) !== -1; });
   }
 
+  // Names of variant options / required modifiers that still have no value
+  function getMissingSelections() {
+    var missing = [];
+    for (var n in selectedVariants) {
+      if (!selectedVariants.hasOwnProperty(n) || selectedVariants[n]) continue;
+      var mod = getModifier(n);
+      if (!mod || mod.isRequired) missing.push(n);
+    }
+    return missing;
+  }
+
   // Every variant option and every required modifier has a value
   function hasRequiredSelections(variantsOnly) {
     for (var n in selectedVariants) {
@@ -259,6 +280,54 @@
       if (!variantsOnly && mod.isRequired) return false;
     }
     return true;
+  }
+
+  // ─── Stock ────────────────────────────────────────────────────
+  //
+  // inStock comes from BigCommerce (isPurchasable + inventory). A missing flag —
+  // older cached responses, the dashboard preview — counts as in stock, and so
+  // does a combination with no matching variant (e.g. past the 250 we fetch):
+  // the cart still validates it.
+
+  // Could this value still be bought, given the other options already picked?
+  function isValueInStock(name, value) {
+    if (!product || getModifier(name)) return true;
+    if (product.inStock === false) return false;
+    var keys = [];
+    for (var n in selectedVariants) {
+      if (selectedVariants.hasOwnProperty(n) && n !== name && selectedVariants[n] && !getModifier(n)) {
+        keys.push(n + ":" + selectedVariants[n] + ",");
+      }
+    }
+    keys.push(name + ":" + value + ",");
+    var matched = false;
+    var variants = product.variants || [];
+    for (var i = 0; i < variants.length; i++) {
+      if (!variantMatches(variants[i], keys)) continue;
+      if (variants[i].inStock !== false) return true;
+      matched = true;
+    }
+    return !matched;
+  }
+
+  // Product, or the fully selected variant, can't be bought
+  function isSelectionOutOfStock() {
+    if (!product) return false;
+    if (product.inStock === false) return true;
+    var variants = product.variants || [];
+    if (!variants.length) return false;
+    if (!hasRequiredSelections(true)) {
+      // Nothing picked yet: out of stock only if no variant can be bought at all
+      for (var j = 0; j < variants.length; j++) {
+        if (variants[j].inStock !== false) return false;
+      }
+      return true;
+    }
+    var keys = getSelectedVariantKeys();
+    for (var i = 0; i < variants.length; i++) {
+      if (variantMatches(variants[i], keys)) return variants[i].inStock === false;
+    }
+    return false;
   }
 
   function calculateVariantPrice() {
@@ -372,9 +441,30 @@
     return map[alignment] || "center";
   }
 
+  // Formats with the store's currency display settings (sent by /api/storefront/product).
+  // Falls back to Intl for the currency code, then to "$" (e.g. the dashboard preview).
   function formatPrice(price) {
     if (price == null) return "";
-    return "$" + Number(price).toFixed(2);
+    var value = Number(price);
+    var prices = product && product.prices;
+    var c = prices && prices.currency;
+    if (c) {
+      var places = c.decimalPlaces >= 0 && c.decimalPlaces <= 4 ? c.decimalPlaces : 2;
+      var parts = Math.abs(value).toFixed(places).split(".");
+      var amount = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, c.thousandsToken || "") +
+        (parts[1] ? (c.decimalToken || ".") + parts[1] : "");
+      var formatted = c.symbolPlacement === "RIGHT" ? amount + c.symbol : c.symbol + amount;
+      return (value < 0 ? "-" : "") + formatted;
+    }
+    if (prices && prices.currencyCode && prices.currencyCode !== "USD") {
+      try {
+        return new Intl.NumberFormat(undefined, {
+          style: "currency", currency: prices.currencyCode, currencyDisplay: "narrowSymbol",
+          minimumFractionDigits: 2, maximumFractionDigits: 2,
+        }).format(value);
+      } catch (e) {}
+    }
+    return "$" + value.toFixed(2);
   }
 
   function el(tag, attrs, children) {
@@ -434,8 +524,8 @@
     return svg;
   }
 
-  // Native arrows are hidden (appearance: none), so overlay a chevron on the
-  // select's right padding. pointer-events: none keeps clicks on the select.
+  // Overlay a chevron on the trigger's right padding. pointer-events: none keeps
+  // clicks on the trigger.
   function addSelectArrow(wrapper, color) {
     var arrow = svgIcon("chevron-down");
     arrow.style.position = "absolute";
@@ -445,6 +535,258 @@
     arrow.style.pointerEvents = "none";
     arrow.style.color = color;
     wrapper.appendChild(arrow);
+  }
+
+  // ─── Custom Dropdown ───────────────────────────────────────────
+  //
+  // Native <select> popups are drawn by the browser and can't be sized, so on a
+  // fixed bottom bar they run off-screen with no scroll. This dropdown renders its
+  // list in <body> with position: fixed, opens on whichever side of the trigger
+  // has more room, caps its height to that space (scrolls beyond it) and is
+  // clamped inside the viewport width.
+
+  var DROPDOWN_LIST_ID = "satc-dropdown-list";
+  var DROPDOWN_EDGE = 8;           // min gap between the list and the viewport edge
+  var DROPDOWN_MAX_HEIGHT = 280;
+  var openDropdown = null;         // { trigger, list, onDocDown, onKey, onScroll, onResize }
+
+  function closeDropdown(refocus) {
+    if (!openDropdown) return;
+    var d = openDropdown;
+    openDropdown = null;
+    document.removeEventListener("pointerdown", d.onDocDown, true);
+    document.removeEventListener("keydown", d.onKey, true);
+    window.removeEventListener("scroll", d.onScroll, true);
+    window.removeEventListener("resize", d.onResize);
+    if (d.list.parentNode) d.list.parentNode.removeChild(d.list);
+    d.trigger.setAttribute("aria-expanded", "false");
+    if (refocus && document.body.contains(d.trigger)) d.trigger.focus();
+  }
+
+  function positionDropdownList(trigger, list) {
+    var r = trigger.getBoundingClientRect();
+    var vw = document.documentElement.clientWidth || window.innerWidth;
+    var vh = window.innerHeight;
+    var below = vh - r.bottom - DROPDOWN_EDGE;
+    var above = r.top - DROPDOWN_EDGE;
+    var openUp = below < Math.min(list.scrollHeight, DROPDOWN_MAX_HEIGHT) && above > below;
+    var maxH = Math.max(Math.min(openUp ? above : below, DROPDOWN_MAX_HEIGHT) - 4, 60);
+
+    var width = Math.min(Math.max(r.width, 120), vw - DROPDOWN_EDGE * 2);
+    var left = Math.min(Math.max(r.left, DROPDOWN_EDGE), vw - DROPDOWN_EDGE - width);
+
+    list.style.maxHeight = maxH + "px";
+    list.style.minWidth = width + "px";
+    list.style.maxWidth = (vw - DROPDOWN_EDGE * 2) + "px";
+    list.style.left = left + "px";
+    if (openUp) {
+      list.style.top = "auto";
+      list.style.bottom = (vh - r.top + 4) + "px";
+    } else {
+      list.style.bottom = "auto";
+      list.style.top = (r.bottom + 4) + "px";
+    }
+    // Keep a too-wide list (long option labels) inside the right edge
+    var lr = list.getBoundingClientRect();
+    if (lr.right > vw - DROPDOWN_EDGE) {
+      list.style.left = Math.max(DROPDOWN_EDGE, vw - DROPDOWN_EDGE - lr.width) + "px";
+    }
+  }
+
+  // opts: { value, options: [{ value, label }], textColor, fontSize, onSelect(value) }
+  function openDropdownList(trigger, opts) {
+    closeDropdown(false);
+
+    var list = el("div", {
+      id: DROPDOWN_LIST_ID,
+      role: "listbox",
+      style: {
+        position: "fixed",
+        zIndex: String((config.zIndex || 9999) + 2),
+        overflowY: "auto",
+        overscrollBehavior: "contain",
+        WebkitOverflowScrolling: "touch",
+        backgroundColor: "#fff",
+        border: "1px solid #E5E7EB",
+        borderRadius: "6px",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+        padding: "4px 0",
+        margin: "0",
+        fontFamily: config.fontFamily || "inherit",
+        fontSize: opts.fontSize,
+        boxSizing: "border-box",
+      },
+    });
+
+    var items = [];
+    var activeIndex = 0;
+
+    function setActive(i) {
+      if (!items.length) return;
+      activeIndex = (i + items.length) % items.length;
+      items.forEach(function (item, idx) {
+        item.style.backgroundColor = idx === activeIndex ? "#F3F4F6" : "transparent";
+      });
+      var a = items[activeIndex];
+      if (a.offsetTop < list.scrollTop) list.scrollTop = a.offsetTop;
+      else if (a.offsetTop + a.offsetHeight > list.scrollTop + list.clientHeight) {
+        list.scrollTop = a.offsetTop + a.offsetHeight - list.clientHeight;
+      }
+    }
+
+    function choose(i) {
+      if (opts.options[i].disabled) return; // out of stock: keep the list open
+      var v = opts.options[i].value;
+      closeDropdown(true);
+      if (v !== opts.value) opts.onSelect(v);
+    }
+
+    opts.options.forEach(function (o, i) {
+      var selected = o.value === opts.value;
+      if (selected) activeIndex = i;
+      var item = el("div", {
+        role: "option",
+        "aria-selected": selected ? "true" : "false",
+        "aria-disabled": o.disabled ? "true" : "false",
+        style: {
+          padding: "8px 12px",
+          minHeight: "36px",
+          display: "flex",
+          alignItems: "center",
+          cursor: o.disabled ? "not-allowed" : "pointer",
+          whiteSpace: "nowrap",
+          color: o.value === "" || o.disabled ? "#9CA3AF" : (opts.textColor || "#374151"),
+          fontWeight: selected ? "600" : "400",
+          lineHeight: "1.3",
+        },
+        onMouseenter: function () { setActive(i); },
+        onClick: function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          choose(i);
+        },
+      }, o.disabled ? o.label + " \u2014 Out of stock" : o.label);
+      items.push(item);
+      list.appendChild(item);
+    });
+
+    document.body.appendChild(list);
+    positionDropdownList(trigger, list);
+    setActive(activeIndex);
+    trigger.setAttribute("aria-expanded", "true");
+
+    var d = {
+      trigger: trigger,
+      list: list,
+      onDocDown: function (e) {
+        if (list.contains(e.target) || trigger.contains(e.target)) return;
+        closeDropdown(false);
+      },
+      onKey: function (e) {
+        if (e.key === "Escape" || e.key === "Tab") {
+          if (e.key === "Escape") e.preventDefault();
+          closeDropdown(e.key === "Escape");
+        } else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setActive(activeIndex + 1);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setActive(activeIndex - 1);
+        } else if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          choose(activeIndex);
+        }
+      },
+      // Page scroll moves the trigger (or hides the bar) — close; scrolling the list itself is fine
+      onScroll: function (e) {
+        if (e.target === list) return;
+        closeDropdown(false);
+      },
+      onResize: function () { closeDropdown(false); },
+    };
+    openDropdown = d;
+    document.addEventListener("pointerdown", d.onDocDown, true);
+    document.addEventListener("keydown", d.onKey, true);
+    window.addEventListener("scroll", d.onScroll, true);
+    window.addEventListener("resize", d.onResize);
+  }
+
+  // Trigger button styled like the old <select>. Returns the wrapper element.
+  // opts: { value, options, placeholder, triggerStyle, arrowColor, textColor, fontSize, attrs, onSelect }
+  function renderDropdown(opts) {
+    var wrapper = el("div", { style: { position: "relative", display: "inline-block" } });
+    var current = null;
+    for (var i = 0; i < opts.options.length; i++) {
+      if (opts.options[i].value === opts.value) { current = opts.options[i]; break; }
+    }
+    var attrs = {
+      type: "button",
+      "aria-haspopup": "listbox",
+      "aria-expanded": "false",
+      style: opts.triggerStyle,
+      onClick: function (e) {
+        e.preventDefault();
+        if (openDropdown && openDropdown.trigger === trigger) closeDropdown(false);
+        else openDropdownList(trigger, opts);
+      },
+      onKeydown: function (e) {
+        if (openDropdown) return;
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          openDropdownList(trigger, opts);
+        }
+      },
+    };
+    for (var k in opts.attrs || {}) attrs[k] = opts.attrs[k];
+
+    // Every possible label sits in the same grid cell and only the current one is
+    // visible, so the trigger is always as wide as its longest label: picking a
+    // value never resizes it or shifts the controls next to it.
+    var labelText = current ? current.label : (opts.placeholder || (opts.options[0] ? opts.options[0].label : ""));
+    var candidates = [labelText];
+    if (opts.placeholder) candidates.push(opts.placeholder);
+    opts.options.forEach(function (o) { candidates.push(o.label); });
+    var labelSpans = [];
+    var seen = {};
+    candidates.forEach(function (text) {
+      if (seen.hasOwnProperty(text)) return;
+      seen[text] = true;
+      labelSpans.push(el("span", {
+        "aria-hidden": text === labelText ? "false" : "true",
+        style: {
+          gridArea: "1 / 1",
+          visibility: text === labelText ? "visible" : "hidden",
+          minWidth: "0",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        },
+      }, text));
+    });
+    function showLabel(text) {
+      labelSpans.forEach(function (span) {
+        var on = span.textContent === text;
+        span.style.visibility = on ? "visible" : "hidden";
+        span.setAttribute("aria-hidden", on ? "false" : "true");
+      });
+    }
+
+    attrs.style = Object.assign({}, opts.triggerStyle, { display: "inline-grid", justifyItems: "start", alignItems: "center" });
+    var trigger = el("button", attrs, labelSpans);
+    // Keep the trigger label + selected value current for callers that don't re-render
+    var onSelect = opts.onSelect;
+    opts = Object.assign({}, opts, {
+      onSelect: function (v) {
+        opts.value = v;
+        for (var j = 0; j < opts.options.length; j++) {
+          if (opts.options[j].value === v) { showLabel(opts.options[j].label); break; }
+        }
+        onSelect(v);
+      },
+    });
+    wrapper.appendChild(trigger);
+    addSelectArrow(wrapper, opts.arrowColor);
+    return wrapper;
   }
 
   // ─── Render Elements ───────────────────────────────────────────
@@ -559,35 +901,42 @@
   // ─── Variant Sub-Renderers ────────────────────────────────────
 
   function renderVariantDropdown(optionName, values) {
-    var wrapper = el("div", { style: { position: "relative", display: "inline-block" } });
-    var select = el("select", {
-      "data-variant-name": optionName,
-      style: {
+    var fontSize = Math.max((config.fontSize || 14) - 2, 11) + "px";
+    // The option name is only the closed field's placeholder, never a choice. An
+    // optional modifier gets an explicit "None" so the shopper can clear it.
+    var mod = getModifier(optionName);
+    var options = mod && !mod.isRequired ? [{ value: "", label: "None" }] : [];
+    values.forEach(function (val) {
+      options.push({ value: val, label: val, disabled: !isValueInStock(optionName, val) });
+    });
+    return renderDropdown({
+      value: selectedVariants[optionName] || "",
+      placeholder: optionName,
+      options: options,
+      textColor: config.variantTextColor,
+      arrowColor: config.variantTextColor,
+      fontSize: fontSize,
+      attrs: { "data-variant-name": optionName, "aria-label": optionName },
+      triggerStyle: {
         padding: "4px 26px 4px 8px",
-        fontSize: Math.max((config.fontSize || 14) - 2, 11) + "px",
+        fontSize: fontSize,
+        lineHeight: "1.4",
         border: "1px solid " + config.variantBorderColor,
         borderRadius: config.variantBorderRadius + "px",
         color: config.variantTextColor,
         backgroundColor: "#fff",
-        appearance: "none",
-        WebkitAppearance: "none",
         cursor: "pointer",
         minWidth: "70px",
+        maxWidth: "180px",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        textAlign: "left",
       },
-      onChange: function (e) {
-        handleVariantChange(e.target.getAttribute("data-variant-name"), e.target.value);
+      onSelect: function (v) {
+        handleVariantChange(optionName, v);
       },
     });
-    var defaultOpt = el("option", { value: "" }, optionName);
-    select.appendChild(defaultOpt);
-    values.forEach(function (val) {
-      var opt = el("option", { value: val }, val);
-      if (selectedVariants[optionName] === val) opt.selected = true;
-      select.appendChild(opt);
-    });
-    wrapper.appendChild(select);
-    addSelectArrow(wrapper, config.variantTextColor);
-    return wrapper;
   }
 
   var COLOR_MAP = {
@@ -604,6 +953,16 @@
     slate: "#64748B", stone: "#78716C", zinc: "#71717A", amber: "#F59E0B",
     emerald: "#10B981", fuchsia: "#D946EF", natural: "#E7DDD2",
   };
+
+  // Dim an out-of-stock swatch / radio / rectangle; its click handler skips it
+  function markOutOfStock(node, optionName, val) {
+    if (isValueInStock(optionName, val)) return;
+    node.setAttribute("aria-disabled", "true");
+    node.setAttribute("title", val + " (out of stock)");
+    node.style.opacity = "0.4";
+    node.style.cursor = "not-allowed";
+    node.style.textDecoration = "line-through";
+  }
 
   function renderVariantSwatch(optionName, values) {
     var group = el("div", { style: { display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" } });
@@ -632,9 +991,11 @@
         },
         onClick: function (e) {
           var t = e.currentTarget;
+          if (t.getAttribute("aria-disabled") === "true") return;
           handleVariantChange(t.getAttribute("data-variant-name"), t.getAttribute("data-variant-value"));
         },
       }, hexColor ? "" : val.substring(0, 2));
+      markOutOfStock(swatch, optionName, val);
       group.appendChild(swatch);
     });
     return group;
@@ -682,9 +1043,11 @@
         style: { display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" },
         onClick: function (e) {
           var t = e.currentTarget;
+          if (t.getAttribute("aria-disabled") === "true") return;
           handleVariantChange(t.getAttribute("data-variant-name"), t.getAttribute("data-variant-value"));
         },
       }, [radioOuter, label]);
+      markOutOfStock(row, optionName, val);
 
       group.appendChild(row);
     });
@@ -712,9 +1075,11 @@
         },
         onClick: function (e) {
           var t = e.currentTarget;
+          if (t.getAttribute("aria-disabled") === "true") return;
           handleVariantChange(t.getAttribute("data-variant-name"), t.getAttribute("data-variant-value"));
         },
       }, val);
+      markOutOfStock(btn, optionName, val);
       group.appendChild(btn);
     });
     return group;
@@ -740,6 +1105,7 @@
 
       // Row: [label] [control]
       var row = el("div", {
+        "data-satc-variant": displayType,
         style: { display: "flex", alignItems: "center", gap: "8px" },
       });
 
@@ -790,32 +1156,31 @@
     var qtyBtnColor = config.quantityButtonColor || "#9CA3AF";
 
     if (config.quantityStyle === "dropdown") {
-      var select = el("select", {
-        style: {
+      var qtyOptions = [];
+      for (var i = 1; i <= 10; i++) qtyOptions.push({ value: String(i), label: String(i) });
+      container.appendChild(renderDropdown({
+        value: String(quantity),
+        options: qtyOptions,
+        textColor: qtyTextColor,
+        arrowColor: qtyBtnColor,
+        fontSize: "12px",
+        attrs: { "aria-label": "Quantity" },
+        triggerStyle: {
           padding: "4px 26px 4px 8px",
           fontSize: "12px",
+          lineHeight: "1.4",
           border: "1px solid " + config.quantityBorderColor,
           borderRadius: config.quantityBorderRadius + "px",
           backgroundColor: qtyBgColor,
           color: qtyTextColor,
-          appearance: "none",
-          WebkitAppearance: "none",
           cursor: "pointer",
           minWidth: "50px",
+          textAlign: "left",
         },
-        onChange: function (e) {
-          quantity = parseInt(e.target.value, 10);
+        onSelect: function (v) {
+          quantity = parseInt(v, 10);
         },
-      });
-      for (var i = 1; i <= 10; i++) {
-        var opt = el("option", { value: String(i) }, String(i));
-        if (i === quantity) opt.selected = true;
-        select.appendChild(opt);
-      }
-      var selectWrap = el("div", { style: { position: "relative", display: "inline-block" } });
-      selectWrap.appendChild(select);
-      addSelectArrow(selectWrap, qtyBtnColor);
-      container.appendChild(selectWrap);
+      }));
     } else if (config.quantityStyle === "input") {
       var input = el("input", {
         type: "number",
@@ -942,12 +1307,14 @@
       children.push(svgIcon("cart"));
     }
     children.push(el("span", null, config.buttonCustomText || "Add to Cart"));
+    var hoverable = function (e) { return !e.currentTarget.disabled; };
 
     var btn = el("button", {
       id: BAR_ID + "-atc-btn",
       style: style,
       onClick: handleAddToCart,
       onMouseenter: function (e) {
+        if (!hoverable(e)) return;
         if (config.buttonStyle === "filled" || config.buttonStyle === "pill") {
           e.currentTarget.style.backgroundColor = config.buttonHoverBgColor;
         } else {
@@ -955,6 +1322,7 @@
         }
       },
       onMouseleave: function (e) {
+        if (!hoverable(e)) return;
         if (config.buttonStyle === "filled" || config.buttonStyle === "pill") {
           e.currentTarget.style.backgroundColor = config.buttonBgColor;
         } else {
@@ -963,12 +1331,26 @@
       },
     }, children);
 
+    applyStockState(btn);
     return btn;
+  }
+
+  // Out of stock → disabled button reading "Out of stock", like the theme's form
+  function applyStockState(btn) {
+    btn = btn || document.getElementById(BAR_ID + "-atc-btn");
+    if (!btn) return;
+    var oos = isSelectionOutOfStock();
+    btn.disabled = oos;
+    btn.style.opacity = oos ? "0.5" : "1";
+    btn.style.cursor = oos ? "not-allowed" : "pointer";
+    var span = btn.querySelector("span");
+    if (span) span.textContent = oos ? "Out of stock" : (config.buttonCustomText || "Add to Cart");
   }
 
   // ─── Bar Rendering ─────────────────────────────────────────────
 
   function renderBar() {
+    closeDropdown(false);
     // Remove existing
     var existing = document.getElementById(BAR_ID);
     if (existing) existing.remove();
@@ -1170,17 +1552,56 @@
     bar.style.opacity = "0";
 
     document.body.appendChild(bar);
+    updateStackedLayout();
   }
 
-  // Below this width the bar switches to the stacked 3-row layout:
+  // Whenever the single row doesn't fit — at any width, e.g. laptops at 125–150%
+  // zoom — the bar switches to the stacked, centered 3-row layout instead of
+  // wrapping unevenly:
   //   1. image · title · price   2. variants   3. quantity + Add to Cart
-  // Never below the mobile breakpoint.
-  var STACKED_LAYOUT_MAX_WIDTH = 940;
+  // A screen with room for everything keeps the compact one-row bar.
+  var MIN_TITLE_WIDTH = 140; // narrower than this (and truncated) counts as "doesn't fit"
+
+  // Does the single-row layout wrap onto a second line, or squeeze the title?
+  function singleRowOverflows(content) {
+    var items = [];
+    var nodes = content.querySelectorAll("[data-satc-el]");
+    for (var i = 0; i < nodes.length; i++) {
+      // Variant options wrap inside their own container — measure each option row
+      if (nodes[i].getAttribute("data-satc-el") === "variants") {
+        for (var j = 0; j < nodes[i].children.length; j++) items.push(nodes[i].children[j]);
+      } else {
+        items.push(nodes[i]);
+      }
+    }
+    var maxTop = -Infinity, minBottom = Infinity;
+    for (var k = 0; k < items.length; k++) {
+      var r = items[k].getBoundingClientRect();
+      if (!r.height) continue;
+      if (r.top > maxTop) maxTop = r.top;
+      if (r.bottom < minBottom) minBottom = r.bottom;
+    }
+    if (maxTop >= minBottom - 1) return true;
+
+    var title = content.querySelector("[data-satc-el='title']");
+    return !!title && title.scrollWidth > title.clientWidth && title.clientWidth < MIN_TITLE_WIDTH;
+  }
+
+  function updateStackedLayout() {
+    var bar = document.getElementById(BAR_ID);
+    if (!bar) return;
+    var content = bar.querySelector(".satc-horiz");
+    bar.classList.remove("satc-stacked");
+    if (!content) return;
+    if (singleRowOverflows(content)) bar.classList.add("satc-stacked");
+  }
 
   function buildCSS() {
-    var stackedMax = Math.max(config && config.mobileBreakpoint || 768, STACKED_LAYOUT_MAX_WIDTH);
-    var rowGap = (config && config.elementGap || 12) + "px";
-    var root = "#" + BAR_ID + " .satc-horiz";
+    var gap = config && config.elementGap || 12;
+    // Tighter row spacing when stacked so the bar doesn't eat the screen on phones
+    var rowGap = Math.min(gap, 8) + "px";
+    var root = "#" + BAR_ID + ".satc-stacked .satc-horiz";
+    var variantCol = root + " #" + BAR_ID + "-variants > [data-satc-variant='dropdown']";
     return (
       "#" + BAR_ID + " * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
       "#" + BAR_ID + " button { font-family: inherit; }\n" +
@@ -1188,22 +1609,31 @@
       "#" + BAR_ID + " input { font-family: inherit; }\n" +
       "#" + BAR_ID + " img { display: block; }\n" +
       "#" + BAR_ID + " .satc-break { display: none; }\n" +
-      "@media (max-width: " + stackedMax + "px) {\n" +
       // Rows are spaced with margins (not row-gap) so an empty variants row adds no extra space
-      "  " + root + " { justify-content: center !important; flex-wrap: wrap !important; row-gap: 0 !important; }\n" +
+      root + " { justify-content: center !important; flex-wrap: wrap !important; row-gap: 0 !important; }\n" +
       // Dissolve the left/right groups so every element can be placed on its row
-      "  " + root + " .satc-group { display: contents !important; }\n" +
-      // Row 1: image · title · price — title shrinks (ellipsis) so the row never wraps
-      "  " + root + " [data-satc-el='image'] { order: 1; flex-shrink: 0; }\n" +
-      "  " + root + " [data-satc-el='title'] { order: 2; flex: 1 1 0 !important; min-width: 0; }\n" +
-      "  " + root + " #" + BAR_ID + "-price { order: 3; flex-shrink: 0; }\n" +
+      root + " .satc-group { display: contents !important; }\n" +
+      // Row 1: image · title · price — title takes the free space, up to two lines
+      root + " [data-satc-el='image'] { order: 1; flex-shrink: 0; }\n" +
+      root + " [data-satc-el='title'] { order: 2; flex: 1 1 0 !important; min-width: 0; " +
+        "white-space: normal !important; display: -webkit-box !important; -webkit-box-orient: vertical; " +
+        "-webkit-line-clamp: 2; line-clamp: 2; line-height: 1.3 !important; overflow-wrap: anywhere; }\n" +
+      root + " #" + BAR_ID + "-price { order: 3; flex-shrink: 0; }\n" +
       // Row 2: variants, full width and centered
-      "  " + root + " #" + BAR_ID + "-variants { order: 4; flex-basis: 100% !important; justify-content: center !important; margin-top: " + rowGap + "; }\n" +
-      "  " + root + " #" + BAR_ID + "-variants:empty { display: none !important; }\n" +
+      root + " #" + BAR_ID + "-variants { order: 4; flex-basis: 100% !important; justify-content: center !important; margin-top: " + rowGap + "; }\n" +
+      root + " #" + BAR_ID + "-variants:empty { display: none !important; }\n" +
+      // Dropdown options sit side by side as small columns (label above the field)
+      variantCol + " { flex-direction: column; align-items: stretch !important; gap: 2px !important; flex: 1 1 88px; min-width: 0; max-width: 180px; }\n" +
+      variantCol + " > span { font-size: 11px !important; overflow: hidden; text-overflow: ellipsis; }\n" +
+      variantCol + " > div { display: block !important; width: 100%; }\n" +
+      variantCol + " button { width: 100%; min-width: 0 !important; max-width: none !important; }\n" +
       // Row 3: quantity + Add to Cart (the break keeps them off row 1 when there are no variants)
-      "  " + root + " .satc-break { display: block; order: 5; flex-basis: 100%; height: 0; }\n" +
-      "  " + root + " #" + BAR_ID + "-quantity, " + root + " #" + BAR_ID + "-atc-btn { order: 6; margin-top: " + rowGap + "; }\n" +
-      "}\n"
+      root + " .satc-break { display: block; order: 5; flex-basis: 100%; height: 0; }\n" +
+      root + " #" + BAR_ID + "-quantity, " + root + " #" + BAR_ID + "-atc-btn { order: 6; margin-top: " + rowGap + "; }\n" +
+      // Quantity + Add to Cart always share one row: the button takes the rest and may shrink
+      root + " #" + BAR_ID + "-quantity { flex-shrink: 0; }\n" +
+      root + " #" + BAR_ID + "-atc-btn { flex: 1 1 auto !important; min-width: 0; max-width: 420px; }\n" +
+      root + " #" + BAR_ID + "-atc-btn span { overflow: hidden; text-overflow: ellipsis; }\n"
     );
   }
 
@@ -1214,6 +1644,7 @@
     currentPrice = calculateVariantPrice();
     updatePriceDisplay();
     updateVariantDisplay();
+    applyStockState();
   }
 
   function updatePriceDisplay() {
@@ -1232,6 +1663,9 @@
     if (!variantsContainer) return;
     var newVariants = renderVariants();
     variantsContainer.replaceWith(newVariants);
+    newVariants.setAttribute("data-satc-el", "variants");
+    // A longer selected value can push the one-row layout onto a second line
+    updateStackedLayout();
   }
 
   function updateQuantityDisplay() {
@@ -1242,11 +1676,18 @@
   // ─── Add to Cart ───────────────────────────────────────────────
 
   function handleAddToCart() {
+    if (isSelectionOutOfStock()) {
+      showNotification("This option is out of stock", "error");
+      return;
+    }
     var url = generateAddToCartUrl();
     if (!url) {
       // Not all options selected
       highlightMissingVariants();
-      showNotification("Please select all options before adding to cart", "error");
+      var missing = getMissingSelections();
+      showNotification(missing.length
+        ? "Please select " + missing.join(", ")
+        : "Please select all options before adding to cart", "error");
       return;
     }
 
@@ -1264,6 +1705,7 @@
         btn.style.pointerEvents = "auto";
         var span = btn.querySelector("span");
         if (span) span.textContent = config.buttonCustomText || "Add to Cart";
+        applyStockState(btn);
       }
     }
 
@@ -1489,6 +1931,7 @@
   }
 
   function hideBar() {
+    closeDropdown(false);
     var bar = document.getElementById(BAR_ID);
     if (!bar) return;
 
@@ -1635,6 +2078,9 @@
     renderBar();
     revealBarInstantly();
   }
+
+  // Re-pick the one-row vs stacked layout whenever the width changes (also in the live preview)
+  window.addEventListener("resize", updateStackedLayout, { passive: true });
 
   if (IS_LIVE_PREVIEW) {
     window.addEventListener("message", function (e) {

@@ -22,6 +22,24 @@ the project uses [Semantic Versioning](https://semver.org/). Dates are ISO `YYYY
   retired Auto-Hide setting; documented Redirect on success; corrected live-preview details.
 - README / dev-workflow: Stripe env vars and Firebase App Hosting deployment.
 
+### Fixed (QA round)
+- **Variant dropdowns** are now a custom list: opens up or down where there is room,
+  max-height with scroll, stays inside the viewport (was cut off on mobile). The
+  placeholder is no longer a selectable option; optional modifiers get a "None" choice.
+  The field keeps a fixed width, so picking a value no longer shifts the controls.
+- **Stacked layout** is chosen by measuring whether the single row fits (any width),
+  replacing the fixed 940px breakpoint: no uneven wrapping at 941–1170px, one row on
+  tablets when it fits. On phones the title gets two lines, dropdowns sit side by side
+  and quantity + Add to Cart share one row (bar ~238px → ~161px at 320px).
+- **Currency**: prices use the store's currency display settings (symbol, placement,
+  separators) instead of a hard-coded `$`.
+- **Option order** matches the store's value order (e.g. waist sizes 28, 29, 30…).
+- **Stock**: out-of-stock values are marked and disabled; the button reads
+  "Out of stock" and is disabled when the product or selected variant can't be bought.
+- **Defaults**: variant options start on the merchant's default value, like the theme.
+- Missing-option message names the options ("Please select Size, Life stage").
+- **Dashboard** live preview no longer crops at 100–150% browser zoom.
+
 ---
 
 ## [1.0.0] — 2026-10-13 (first production release)

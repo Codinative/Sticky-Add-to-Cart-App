@@ -9,6 +9,10 @@ import { buildSrcdoc } from "@/lib/previewSrcdoc";
 // this real width (so the script's breakpoints behave exactly as on a store) and
 // then scaled down to fit the preview panel.
 const VIEWPORT_WIDTH = { desktop: 1280, mobile: 390 } as const;
+// The mobile frame is also scaled to show at least this much phone height, so a
+// short panel (laptop at 100–125% zoom) shrinks the whole phone instead of
+// cropping it to a stubby window.
+const MOBILE_MIN_HEIGHT = 700;
 
 /**
  * Live preview that runs the real storefront script (public/sticky-bar.min.js)
@@ -57,11 +61,14 @@ export function LivePreview({ config, previewDevice }: { config: DefaultStickyBa
   }, [config]);
 
   const viewportWidth = VIEWPORT_WIDTH[previewDevice];
-  const scale = box.width > 0 ? Math.min(1, box.width / viewportWidth) : 1;
+  const scale = box.width > 0
+    ? Math.min(1, box.width / viewportWidth, isMobile && box.height > 0 ? box.height / MOBILE_MIN_HEIGHT : 1)
+    : 1;
   const frameHeight = box.height > 0 ? box.height / scale : 0;
 
   return (
-    <div ref={containerRef} className="w-full h-full min-h-[520px] flex justify-center">
+    // Fills the panel on wide screens (lg); stacked below it, the panel has no height of its own
+    <div ref={containerRef} className="w-full h-[560px] lg:h-full lg:min-h-0 flex justify-center">
       {box.width > 0 && (
         <div
           className={`relative overflow-hidden bg-white border border-gray-200 ${isMobile ? "rounded-[28px]" : "rounded-lg sm:rounded-xl"}`}
