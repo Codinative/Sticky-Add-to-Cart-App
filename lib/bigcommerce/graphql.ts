@@ -6,21 +6,33 @@ export interface ProcessedVariant {
     variantKey: string;
     price: number;
     optionsIds: Record<string, number>; // option display name → value entityId
+    inStock: boolean; // purchasable and in stock (BigCommerce's own check)
 }
 
 export interface ProcessedProduct {
     entityId: number;
     name: string;
+    inStock: boolean; // product can be bought at all (not Unavailable / out of stock)
     image: { url: string; alt: string };
     prices: {
         price: number;
         salePrice: number | null;
         basePrice: number | null;
         currencyCode: string;
+        // Store's display format for currencyCode (null → client falls back to Intl)
+        currency?: CurrencyDisplay | null;
     };
     variants: ProcessedVariant[];
     variantLabels: Record<string, string[]>;
     options: ProcessedOption[];
+}
+
+export interface CurrencyDisplay {
+    symbol: string;
+    symbolPlacement: "LEFT" | "RIGHT";
+    decimalToken: string;
+    thousandsToken: string;
+    decimalPlaces: number;
 }
 
 export interface ProcessedOption {
@@ -30,6 +42,8 @@ export interface ProcessedOption {
     isRequired: boolean;
     // Modifier (non-variant) multiple-choice options only: value ids for attribute[id]=valueId
     values?: { id: number; label: string; isDefault: boolean }[];
+    // Variant options only: the value the merchant set as default (the theme preselects it)
+    defaultValue?: string;
 }
 
 export interface ProductRouteResult {
@@ -107,6 +121,8 @@ function buildProductByPathQuery(path: string): string {
                     ... on Product {
                         entityId
                         name
+                        availabilityV2 { status }
+                        inventory { isInStock }
                         defaultImage {
                             url(width: 500)
                             altText
@@ -137,6 +153,8 @@ function buildProductByPathQuery(path: string): string {
                                     prices {
                                         price { value }
                                     }
+                                    isPurchasable
+                                    inventory { isInStock }
                                 }
                             }
                         }
@@ -217,7 +235,52 @@ export async function fetchProductByPath(
 
     // Process the GraphQL product into our standard format
     const product = processGraphQLProduct(node);
+    product.prices.currency = await fetchCurrencyDisplay(storeHash, storefrontToken, product.prices.currencyCode);
     return { isProductPage: true, product };
+}
+
+/**
+ * Fetch how the store displays a currency (symbol, placement, separators), so the
+ * bar matches the theme's prices. Kept separate from the product query and never
+ * throws: a failure here only costs the formatting, not the bar.
+ */
+async function fetchCurrencyDisplay(
+    storeHash: string,
+    storefrontToken: string,
+    currencyCode: string
+): Promise<CurrencyDisplay | null> {
+    // Inlined as a GraphQL enum literal, so allow only ISO 4217 codes
+    if (!/^[A-Z]{3}$/.test(currencyCode)) return null;
+    try {
+        const response = await fetch(
+            `https://store-${storeHash}.mybigcommerce.com/graphql`,
+            {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${storefrontToken}`,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                body: JSON.stringify({
+                    query: `{ site { currency(currencyCode: ${currencyCode}) { display { symbol symbolPlacement decimalToken thousandsToken decimalPlaces } } } }`,
+                }),
+            }
+        );
+        if (!response.ok) return null;
+        const data = await response.json();
+        const display = data?.data?.site?.currency?.display;
+        if (!display || typeof display.symbol !== "string") return null;
+        return {
+            symbol: display.symbol,
+            symbolPlacement: display.symbolPlacement === "RIGHT" ? "RIGHT" : "LEFT",
+            decimalToken: display.decimalToken ?? ".",
+            thousandsToken: display.thousandsToken ?? ",",
+            decimalPlaces: Number.isInteger(display.decimalPlaces) ? display.decimalPlaces : 2,
+        };
+    } catch (error) {
+        console.error("Currency display lookup failed:", error);
+        return null;
+    }
 }
 
 // ─── GraphQL Response Processing ────────────────────────────────
@@ -233,17 +296,26 @@ function processGraphQLProduct(gqlProduct: any): ProcessedProduct {
     const options: ProcessedOption[] = [];
     // Multiple-choice modifiers (customizations), shown in the variants row after the variant options
     const modifierLabels: Record<string, string[]> = {};
+    // Value order of each multiple-choice option as set in the store (what the theme's form shows)
+    const optionValueOrder: Record<string, string[]> = {};
 
     // Process product options from productOptions
     if (gqlProduct.productOptions?.edges) {
         for (const edge of gqlProduct.productOptions.edges) {
             const opt = edge.node;
+            if (opt.__typename === "MultipleChoiceOption" && opt.values?.edges?.length) {
+                optionValueOrder[opt.displayName] = opt.values.edges.map((v: any) => v.node.label);
+            }
+            const defaultEdge = opt.isVariantOption
+                ? opt.values?.edges?.find((v: any) => v.node.isDefault)
+                : null;
             const option: ProcessedOption = {
                 id: opt.entityId,
                 name: opt.displayName,
                 isVariantOption: opt.isVariantOption,
                 isRequired: !!opt.isRequired,
             };
+            if (defaultEdge) option.defaultValue = defaultEdge.node.label;
             if (!opt.isVariantOption && opt.__typename === "MultipleChoiceOption" && opt.values?.edges?.length) {
                 const values = opt.values.edges.map((v: any) => ({
                     id: v.node.entityId,
@@ -297,8 +369,24 @@ function processGraphQLProduct(gqlProduct: any): ProcessedProduct {
                 variantKey,
                 price: variantNode.prices?.price?.value ?? 0,
                 optionsIds,
+                inStock: variantNode.isPurchasable !== false && variantNode.inventory?.isInStock !== false,
             });
         }
+    }
+
+    // Variant labels were collected in variant order (e.g. 29, 32, 28…); show them in the
+    // store's option order instead. Labels missing from that list keep their place at the end.
+    for (const name in variantLabels) {
+        const order = optionValueOrder[name];
+        if (!order) continue;
+        const rank = (label: string) => {
+            const i = order.indexOf(label);
+            return i === -1 ? order.length : i;
+        };
+        variantLabels[name] = variantLabels[name]
+            .map((label, i) => ({ label, i }))
+            .sort((a, b) => rank(a.label) - rank(b.label) || a.i - b.i)
+            .map((x) => x.label);
     }
 
     // Modifiers render after the variant options (a variant option wins on a name clash)
@@ -318,6 +406,7 @@ function processGraphQLProduct(gqlProduct: any): ProcessedProduct {
     return {
         entityId: gqlProduct.entityId,
         name: gqlProduct.name,
+        inStock: gqlProduct.availabilityV2?.status !== "Unavailable" && gqlProduct.inventory?.isInStock !== false,
         image: {
             url: gqlProduct.defaultImage?.url || "",
             alt: gqlProduct.defaultImage?.altText || gqlProduct.name,
