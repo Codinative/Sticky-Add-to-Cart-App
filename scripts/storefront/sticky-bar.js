@@ -1092,6 +1092,7 @@
       id: BAR_ID + "-variants",
       // Options side by side on one row (wraps only if they can't fit)
       style: { flexShrink: "0", display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: "12px", rowGap: "6px" },
+      onScroll: function (e) { updateVariantScrollHint(e.currentTarget); },
     });
 
     if (!product.variantLabels || Object.keys(product.variantLabels).length === 0) {
@@ -1587,13 +1588,31 @@
     return !!title && title.scrollWidth > title.clientWidth && title.clientWidth < MIN_TITLE_WIDTH;
   }
 
-  function updateStackedLayout() {
+  function updateStackedLayout(variantsScrollLeft) {
     var bar = document.getElementById(BAR_ID);
     if (!bar) return;
     var content = bar.querySelector(".satc-horiz");
+    var variants = document.getElementById(BAR_ID + "-variants");
+    // Measuring drops the stacked class (and with it the scroller), so keep the position
+    var scrollLeft = typeof variantsScrollLeft === "number" ? variantsScrollLeft : (variants ? variants.scrollLeft : 0);
     bar.classList.remove("satc-stacked");
     if (!content) return;
     if (singleRowOverflows(content)) bar.classList.add("satc-stacked");
+    if (variants) {
+      variants.scrollLeft = scrollLeft;
+      updateVariantScrollHint(variants);
+    }
+  }
+
+  // Stacked layout keeps the variants on one row that scrolls sideways. Fade the
+  // edge(s) that have more options past them, so shoppers can tell it scrolls.
+  function updateVariantScrollHint(variants) {
+    var max = variants.scrollWidth - variants.clientWidth;
+    var left = max > 1 && variants.scrollLeft > 1;
+    var right = max > 1 && variants.scrollLeft < max - 1;
+    var fade = left && right ? "both" : left ? "left" : right ? "right" : "";
+    if (fade) variants.setAttribute("data-satc-fade", fade);
+    else variants.removeAttribute("data-satc-fade");
   }
 
   function buildCSS() {
@@ -1601,7 +1620,12 @@
     // Tighter row spacing when stacked so the bar doesn't eat the screen on phones
     var rowGap = Math.min(gap, 8) + "px";
     var root = "#" + BAR_ID + ".satc-stacked .satc-horiz";
-    var variantCol = root + " #" + BAR_ID + "-variants > [data-satc-variant='dropdown']";
+    var variants = root + " #" + BAR_ID + "-variants";
+    var variantCol = variants + " > [data-satc-variant='dropdown']";
+    var fadeMask = function (stops) {
+      var g = "linear-gradient(to right, " + stops + ")";
+      return "-webkit-mask-image: " + g + "; mask-image: " + g + ";";
+    };
     return (
       "#" + BAR_ID + " * { box-sizing: border-box; margin: 0; padding: 0; }\n" +
       "#" + BAR_ID + " button { font-family: inherit; }\n" +
@@ -1620,10 +1644,24 @@
         "-webkit-line-clamp: 2; line-clamp: 2; line-height: 1.3 !important; overflow-wrap: anywhere; }\n" +
       root + " #" + BAR_ID + "-price { order: 3; flex-shrink: 0; }\n" +
       // Row 2: variants, full width and centered
-      root + " #" + BAR_ID + "-variants { order: 4; flex-basis: 100% !important; justify-content: center !important; margin-top: " + rowGap + "; }\n" +
-      root + " #" + BAR_ID + "-variants:empty { display: none !important; }\n" +
+      // One row that scrolls sideways when the options don't fit. Auto margins on the
+      // ends center a row that fits (justify-content: center would clip the start).
+      variants + " { order: 4; flex-basis: 100% !important; max-width: 100%; flex-wrap: nowrap !important; " +
+        "justify-content: flex-start !important; overflow-x: auto; overflow-y: hidden; " +
+        "-webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scrollbar-width: thin; " +
+        "padding-bottom: 4px; margin-top: " + rowGap + "; }\n" +
+      variants + "::-webkit-scrollbar { height: 4px; }\n" +
+      variants + "::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.25); border-radius: 2px; }\n" +
+      variants + " > * { flex-shrink: 0 !important; }\n" +
+      variants + " > * > div { flex-wrap: nowrap !important; }\n" +
+      variants + " > :first-child { margin-left: auto; }\n" +
+      variants + " > :last-child { margin-right: auto; }\n" +
+      variants + "[data-satc-fade='right'] { " + fadeMask("#000 calc(100% - 28px), transparent") + " }\n" +
+      variants + "[data-satc-fade='left'] { " + fadeMask("transparent, #000 28px") + " }\n" +
+      variants + "[data-satc-fade='both'] { " + fadeMask("transparent, #000 28px, #000 calc(100% - 28px), transparent") + " }\n" +
+      variants + ":empty { display: none !important; }\n" +
       // Dropdown options sit side by side as small columns (label above the field)
-      variantCol + " { flex-direction: column; align-items: stretch !important; gap: 2px !important; flex: 1 1 88px; min-width: 0; max-width: 180px; }\n" +
+      variantCol + " { flex-direction: column; align-items: stretch !important; gap: 2px !important; flex: 1 0 88px; min-width: 88px; max-width: 180px; }\n" +
       variantCol + " > span { font-size: 11px !important; overflow: hidden; text-overflow: ellipsis; }\n" +
       variantCol + " > div { display: block !important; width: 100%; }\n" +
       variantCol + " button { width: 100%; min-width: 0 !important; max-width: none !important; }\n" +
@@ -1661,11 +1699,12 @@
     // Re-render variants section
     var variantsContainer = document.getElementById(BAR_ID + "-variants");
     if (!variantsContainer) return;
+    var scrollLeft = variantsContainer.scrollLeft; // stay on the option just picked
     var newVariants = renderVariants();
     variantsContainer.replaceWith(newVariants);
     newVariants.setAttribute("data-satc-el", "variants");
     // A longer selected value can push the one-row layout onto a second line
-    updateStackedLayout();
+    updateStackedLayout(scrollLeft);
   }
 
   function updateQuantityDisplay() {

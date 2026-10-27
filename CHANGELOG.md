@@ -38,6 +38,8 @@ the project uses [Semantic Versioning](https://semver.org/). Dates are ISO `YYYY
   "Out of stock" and is disabled when the product or selected variant can't be bought.
 - **Defaults**: variant options start on the merchant's default value, like the theme.
 - Missing-option message names the options ("Please select Size, Life stage").
+- **Many variants**: in the stacked layout the variants stay on one row that scrolls
+  sideways (edge fade shows there is more), so the bar no longer grows with every option.
 - **Dashboard** live preview no longer crops at 100–150% browser zoom.
 
 ---
